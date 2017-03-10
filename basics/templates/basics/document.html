@@ -1,0 +1,15 @@
+{% extends "basics/base.html" %}
+
+{% block content %}
+
+{% for s in statements %}
+
+    <p>
+        <b>{{ s.speaker }}:</b>
+        {{ s.text }}
+
+    </p>
+
+{% endfor %}
+
+{% endblock %}

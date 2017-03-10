@@ -1,0 +1,17 @@
+{% extends "basics/base.html" %}
+
+{% block content %}
+
+<table border="1">
+{% for s in speakers %}
+    <tr>
+        <td><a href="{{ s.link_decorator }}">{{ s.name }}</a></td>
+        <td>{{ s.party }}</td>
+        <td>{{ s.function }}</td>
+        <td>{{ s.number_of_statements_decorator }}</td>
+    </tr>
+
+{% endfor %}
+</table>
+
+{% endblock %}

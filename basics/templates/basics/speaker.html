@@ -1,0 +1,17 @@
+{% extends "basics/base.html" %}
+
+{% block content %}
+
+{{ form|safe }}
+
+{% for s in statements %}
+
+    <p>
+        <b>{{ s.document }}:</b>
+        {{ s.text }}
+
+    </p>
+
+{% endfor %}
+
+{% endblock %}

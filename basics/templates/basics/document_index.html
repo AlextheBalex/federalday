@@ -1,0 +1,16 @@
+{% extends "basics/base.html" %}
+
+{% block content %}
+
+<table border="1">
+{% for d in documents %}
+    <tr>
+        <td>{{ d.date }}</td>
+        <td>{{ d.legislative_period }}</td>
+        <td><a href="{{ d.link_decorator }}">{{ d.document_id }}</a></td>
+    </tr>
+
+{% endfor %}
+</table>
+
+{% endblock %}
