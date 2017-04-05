@@ -9,6 +9,8 @@ class Document(models.Model):
     date = models.DateField(verbose_name=_("date of session"))
     legislative_period = models.IntegerField(verbose_name=_("legislative period"))
     document_id = models.IntegerField(verbose_name=_("document per period"))
+    url = models.CharField(max_length=250, default=None, null=True)
+
 
     def __unicode__(self):
         return "%s/%s (%s)" % (self.legislative_period, self.document_id, self.date)
@@ -24,6 +26,9 @@ class Party(models.Model):
     def __unicode__(self):
         return "%s" % self.abbrev
 
+    def num_statements_decorator(self):
+        return RegularStatement.objects.filter(speaker__party=self).count()
+
 
 class Function(models.Model):
 
@@ -31,6 +36,12 @@ class Function(models.Model):
 
     def __unicode__(self):
         return "%s" % self.name
+
+    def num_statements_decorator(self):
+        return RegularStatement.objects.filter(speaker__function=self).count()
+
+    def link_decorator(self):
+        return reverse("basics:function", args=(self.pk,))
 
 
 class RegularStatement(models.Model):
@@ -46,6 +57,8 @@ class RegularStatement(models.Model):
     speaker = models.ForeignKey("basics.Speaker", verbose_name=_("who said it"))
     document = models.ForeignKey("basics.Document", verbose_name=_("source document"), default=None)
     order_id = models.IntegerField(verbose_name=_("order within document"), default=0)
+    page = models.IntegerField(verbose_name=_("page where statement begins"), default=0)
+    cleaned_text = models.TextField(verbose_name=_("only letters"), default=None, null=True)
 
     def __unicode__(self):
         return "%s-%s %s" % (self.document, self.order_id, self.speaker)
@@ -63,10 +76,31 @@ class Speaker(models.Model):
     function = models.ForeignKey("basics.Function", on_delete=models.CASCADE)
 
     def __unicode__(self):
-        return "%s (%s)" % (self.name, self.party.abbrev)
+        if self.party.abbrev:
+            return "%s (%s)" % (self.name, self.party.abbrev)
+        else:
+            return "%s (%s)" % (self.name, self.function)
+
 
     def link_decorator(self):
         return reverse("basics:speaker", args=(self.pk, ))
 
     def number_of_statements_decorator(self):
         return RegularStatement.objects.filter(speaker=self).count()
+
+class Statistics(models.Model):
+    no_plenarprotokolle = models.IntegerField(verbose_name=_("How many Plenarprotokolle in db"), default=0)
+    no_speakers = models.IntegerField(verbose_name=_("How many speakers"), default=0)
+    no_functions = models.IntegerField(verbose_name=_("How many functions"), default=0)
+    no_parties = models.IntegerField(verbose_name=_("How many Parties"), default=0)
+
+
+'''class SpeakerStatistics(models.Model):
+    speaker = models.ForeignKey("basics.Speaker", verbose_name=_("whose statistics"))
+    no_statements = models.IntegerField(verbose_name=_("number of statements"))
+    no_words = models.IntegerField(verbose_name=_("number of words"))
+    no_statement_blocks = models.IntegerField(verbose_name=("number of statement blocks"))
+    percent_of_words = models.FloatField(verbose_name=("percent of all words in leg period by speaker"))
+    no_of_long_statement_blocks = models.IntegerField(verbose_name=("number of statement blocks which have more than 4 statements"))
+    active_leg_periods = models.TextField(verbose_name=_("active legislative periods"))
+    active_documents_ordered = models.IntegerField(verbose_name=("number of statement blocks ordered by number of statements"))'''

@@ -1,15 +1,37 @@
 {% extends "basics/base.html" %}
 
+{% block title %}<a href="{{ url }}"><h2>{{ title }}</h2></a>{% endblock %}
 {% block content %}
 
-{% for s in statements %}
+<table align="center">
+    <tr>
+        <th><strong>Sprecher in der Sitzung</strong></th>
+        <th>Anzahl an Aussagen</th>
+    </tr>
+    {% for speaker, no_stmts in speakers %}
+    <tr>
+        <td>{{ speaker }}</td>
+        <td class="number">{{ no_stmts }}</td>
+    </tr>
+    {% endfor %}
 
-    <p>
-        <b>{{ s.speaker }}:</b>
-        {{ s.text }}
+</table>
 
-    </p>
+{% regroup statements by speaker as stmts_list %}
 
-{% endfor %}
+<ul class="a">
+{% for stmts in stmts_list %}
+    <h3><a href="{{ stmts.grouper.link_decorator }}">{{ stmts.grouper }}</a> </h3>
+    <ul class="b">
+        {% for stmt in stmts.list %}
+          <li><strong>S.{{ stmt.page }}:</strong> {{ stmt.text }}</li><br>
+        {% endfor %}
+
+    </ul>
+
+    {% endfor %}
+
+</ul>
+
 
 {% endblock %}

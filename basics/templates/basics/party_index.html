@@ -1,0 +1,15 @@
+{% extends "basics/base.html" %}
+
+{% block content %}
+
+<table border="1">
+{% for s in parties %}
+    <tr>
+        <td>{{ s.abbrev }}</td>
+        <td>{{ s.num_statements_decorator }}</td>
+    </tr>
+
+{% endfor %}
+</table>
+
+{% endblock %}

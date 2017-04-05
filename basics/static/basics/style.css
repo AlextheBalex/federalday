@@ -1,0 +1,108 @@
+
+head {
+    border-style: groove;
+    background-color: rgb(0, 0, 107)
+}
+
+body {
+    background-color: LightBlue;
+}
+
+h2 {
+    color: Black;
+    text-align: center;
+}
+
+h3 {
+    color: black;
+    text-align: center;
+    text-decoration: underline;
+}
+
+h3.stmt_block_title {
+    color: black;
+    background: linear-gradient(#0039e6, #80bfff, #0039e6);
+}
+
+li {
+    border-style: groove;
+    border-color: rgb(0, 0, 107);
+    text-align: justify;
+    /*background:linear-gradient(#ffff99, #ffff33, #ffb84d, #ffa100, #f96604, #ffa100, #ffb84d, #ffff33, #ffff99);*/
+    background: linear-gradient(#80bfff, White, #80bfff);
+    padding: 5px;
+    list-style-type: none;
+}
+
+li.list_title {
+    padding: none
+}
+
+ul.a {
+    border-style: none;
+    border-color: rgb(0, 0, 60);
+    margin-left: 300px;
+    margin-right: 300px;
+}
+
+ul.b {
+    border-style: outset;
+    background:linear-gradient(Black, #09092a, MidnightBlue, #2e2ed1, DeepSkyBlue, #2e2ed1, MidnightBlue, #09092a, Black);
+    border-color: rgb(0, 0, 57);
+    padding: 3px;
+}
+
+a:link {
+    color: rgb(0, 0, 57);
+}
+
+a:visited {
+    color: rgb(0, 0, 65);
+}
+
+a:hover {
+    color: hotpink;
+}
+
+div.header {
+    color: DeepSkyBlue;
+    background:linear-gradient(#09092a, MidnightBlue, #2e2ed1, DeepSkyBlue, #2e2ed1, MidnightBlue, #09092a);
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+div.navbar {
+    background:linear-gradient(#09092a, MidnightBlue, #2e2ed1, DeepSkyBlue, #2e2ed1, MidnightBlue, #09092a);
+    margin-bottom: 10px;
+    padding: 5px;
+}
+
+table {
+    background:linear-gradient(Black, #09092a, MidnightBlue, #2e2ed1, DeepSkyBlue, #2e2ed1, MidnightBlue, #09092a, Black);
+    margin-top: 10px;
+}
+
+
+th, td {
+    text-align: left;
+    padding: 5px;
+    border: 1px solid black;
+}
+
+th {
+    text-align: center;
+    background: linear-gradient(#80bfff, White, #80bfff);
+}
+
+td.number {
+    text-align: center;
+}
+
+tr:nth-child(odd) {
+background-color: LightSkyBlue
+}
+
+tr:nth-child(even) {
+background-color: #e6eeff;
+}

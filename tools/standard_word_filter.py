@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import sqlite3
 from find_persons import find_mentioned_persons_from_text
 from dictionary_functions import simple_dictionary, multi_option_dictionary, multi_option_dictionary_v_always_l
-from commons import clean_the_text_add_spaces, l_of_words
+from commons import clean_text_add_spaces, l_of_words
 
 
 def connect_sqlite():
@@ -97,7 +97,7 @@ def find_wiki_titles_from_text(text, d_wiki_titles):
 
 def create_part_of_speech_strings_with_persons_and_wiki_titles(text, d_nouns, d_verbs, d_adjectives, d_partizip_i, d_first_names, d_last_names, set_no_first_first_names, d_wiki_titles):
 
-    cleaned_text = clean_the_text_add_spaces(text).replace("'", ' ')
+    cleaned_text = clean_text_add_spaces(text).replace("'", ' ')
 
     l_persons = find_mentioned_persons_from_text(text, d_first_names, d_last_names, set_no_first_first_names)
     for person in l_persons:

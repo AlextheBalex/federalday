@@ -6,7 +6,7 @@ def clean_text(text):
     clean_text = u' '.join(clean_text.split())
     return clean_text
 
-def clean_the_text_add_spaces(text):
+def clean_text_add_spaces(text):
     clean_text = text.replace(u' ', ' ').replace('|', ' ')
     clean_text = ''.join([letter for letter in clean_text if letter and letter.isalpha() or letter in ' -']).strip()
     clean_text = u' '.join(clean_text.split())

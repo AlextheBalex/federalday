@@ -1,20 +1,26 @@
 <!doctype html>
 <html>
   <head>
+      {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'basics/style.css' %}" />
     <meta charset="utf-8">
+    <script type="text/javascript" src="{% static 'basics/jquery-3.2.0.slim.min.js' %}">
+</script>
+    <script type="text/javascript" src="{% static 'basics/search_word_highlighting.js' %}">
+</script>
     <title>{{ title }}</title>
     <!-- <meta name="description" content="Webpage for xxxx"> -->
-    <link rel="stylesheet" href="basics/style.css">
+
   </head>
   <body>
+  <div class="navbar">
+    <a href="{% url 'basics:document_index' %}">documents</a>
+    | <a href="{% url 'basics:speaker_index' %}">speakers</a> | <a href="{% url 'basics:party_index' %}">parties</a> | <a href="{% url 'basics:function_index' %}">functions</a>
+  </div>
 
-  <a href="{% url 'basics:document_index' %}">documents</a>
-  | <a href="{% url 'basics:speaker_index' %}">speakers</a>
-
-  <hr/>
-
-  <h2>{{ title }}</h2>
-  <hr/>
+    <div class="header">
+    {% block title %}<h2>{{ title }}</h2>{% endblock %}
+    </div>
 
   {% block content %}
   {% endblock %}

@@ -1,0 +1,59 @@
+{% extends "basics/base.html" %}
+
+{% block content %}
+
+{{ form|safe }}
+
+<table class="statistics" align="center">
+    <tr>
+        <th class="table_title" colspan="2">Statistik</th>
+    </tr>
+    <tr>
+        <td>Anzahl an Statements</td>
+        <td class="number">{{ number_of_statements }}</td>
+    </tr>
+    <tr>
+        <td>Anzahl an Aussageblöcken</td>
+        <td class="number">{{ number_of_statement_blocks }}</td>
+    </tr>
+    <tr>
+        <td>Aktiver Zeitraum</td>
+        <td class="number">{{ first_date }} - {{ last_date }}</td>
+    </tr>
+    <tr>
+        <td>Aktive Sitzungen</td>
+        <td class="number">{{ number_of_active_dates }}</td>
+    </tr>
+</table>
+
+<table align="center">
+    <tr>
+        <th class="table_title" colspan="2">Amtsinhaber</th>
+    </tr>
+    {% for speaker in l_speakers %}
+
+        <tr>
+            <td><a href="{{ speaker.link_decorator }}">{{ speaker.name }}</a></td>
+        </tr>
+    {% endfor %}
+</table>
+
+
+<ul class="a">
+{% for speaker, l_stmt_blocks in l_l_speaker_l_stmt_blocks %}
+        <h3><a href="{{ speaker.link_decorator }}">{{ speaker.name }}</a></h3>
+
+        <ul class="b">
+
+            {% for stmt_block in l_stmt_blocks %}
+                <h3 class="stmt_block_title"><a href="{{ stmt_block.0.document.url }}">{{ stmt_block.0.document }}</a></h3>
+                {% for stmt in stmt_block %}
+                    <li>S.{{ stmt.page }}: {{ stmt.text }}</li><br>
+                {% endfor %}
+            {% endfor %}
+
+        </ul>
+{% endfor %}
+</ul>
+
+{% endblock %}
