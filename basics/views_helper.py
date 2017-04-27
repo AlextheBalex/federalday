@@ -201,13 +201,12 @@ def count_speaker_party_from_statements(stmts, request):
     # number_of_statements = stmts.count()
     first_date = stmts[0].document.date
     last_date = stmts.reverse()[0].document.date
-    print(stmts.count())
-    speaker_ids = set(i[0] for i in stmts.values_list("speaker"))
+    #print(stmts.count())
+    speaker_ids = [i[0] for i in stmts.values_list("speaker")]
     # print(speaker_ids)
     speaker_no_statements = {}
 
     print("%s COUNT speakers" % (datetime.datetime.now() - time))
-    print("len speaker_ids %s" % len(speaker_ids))
     for i in speaker_ids:
         speaker = Speaker.objects.get(pk=i)
 
@@ -248,7 +247,6 @@ def count_speaker_party_from_statements(stmts, request):
 
     print("%s COUNT sort party" % (datetime.datetime.now() - time))
     l_party_no_statements = sorted([(no_stmts, party) for party, no_stmts in party_no_statements.iteritems()])[::-1]
-
     return l_stmts_no_speaker, l_party_no_statements, first_date, last_date
 
 

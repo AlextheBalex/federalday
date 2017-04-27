@@ -348,6 +348,13 @@ def statements_search_view_cached(request):
         last_date = 'never'
         l_party_no_statements = []
 
+    current_page = request.GET.get("page", 0)
+    stmts_per_page = request.GET.get("stmts_per_page", 25)
+    num_stmts = stmts.count()
+
+    first_stmt = max(0,min(num_stmts-stmts_per_page, current_page * stmts_per_page ))
+    last_stmt = min(num_stmts, first_stmt + stmts_per_page)
+
     form = """<form name="word-search-form" method="GET">"""
     form += """<input type="submit" value="%s"/>""" % _("Suchen")
     for i in range(num_search_fields):
@@ -359,7 +366,7 @@ def statements_search_view_cached(request):
     ctx = {
         "title": "%s" % "Statements Suche",
         "form": form,
-        "statements": stmts[:2],
+        "statements": stmts[first_stmt:last_stmt],
         "number_of_statements": no_stmts_filtered,
         "first_date": first_date,
         "last_date": last_date,
