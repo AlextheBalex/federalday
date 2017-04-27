@@ -14,5 +14,5 @@ urlpatterns = [
     url(r'^speaker/(?P<id>[0-9]+)/',    speaker_view, name="speaker"),
     url(r'^function/(?P<id>[0-9]+)/',   function_view, name="function"),
     url(r'^party/(?P<id>[0-9]+)/',      party_view, name="party"),
-    url(r'^statements_search/',         statements_search_view, name="statements_search"),
+    url(r'^statements_search/',         statements_search_view_cached, name="statements_search"),
 ]

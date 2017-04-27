@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import json
+
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
@@ -116,3 +118,27 @@ class Statistics(models.Model):
     no_of_long_statement_blocks = models.IntegerField(verbose_name=("number of statement blocks which have more than 4 statements"))
     active_leg_periods = models.TextField(verbose_name=_("active legislative periods"))
     active_documents_ordered = models.IntegerField(verbose_name=("number of statement blocks ordered by number of statements"))'''
+
+
+class JsonCache(models.Model):
+    identifier = models.TextField(verbose_name=_("Identifier"), db_index=True)
+    json_store = models.TextField(verbose_name=_("JSON"))
+
+    @classmethod
+    def store(cls, key, value):
+        jsonstr = json.dumps(value)
+        try:
+            o = JsonCache.objects.get(identifier=key)
+            o.json_store = value
+            o.save()
+            return o
+        except JsonCache.DoesNotExist:
+            return JsonCache.objects.create(identifier=key, json_store=jsonstr)
+
+    @classmethod
+    def restore(cls, key):
+        try:
+            o = JsonCache.objects.get(identifier=key)
+            return json.loads(o.json_store)
+        except JsonCache.DoesNotExist:
+            return None

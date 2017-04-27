@@ -7,7 +7,9 @@ from django.utils.translation import ugettext_lazy as _
 
 from models import *
 
-from views_helper import get_l_l_part_of_speech_freqs, color_search_words, filter_statements, order_stmts_by_speaker_stmt_blocks, pos_freq_dic
+from views_helper import (get_l_l_part_of_speech_freqs, color_search_words,
+                          filter_statements, filter_statements_cached,
+                          order_stmts_by_speaker_stmt_blocks, pos_freq_dic)
 
 
 #def default_redirect(request):
@@ -299,6 +301,110 @@ def statements_search_view(request):
     return render(request, "basics/statements_search.html", ctx)
 
 
+def statements_search_view_cached(request):
+
+    num_search_fields = 1
+    search_fields = []
+    for i in range(10):
+        term = request.GET.get("word%s" % i, None)
+        if term:
+            num_search_fields = i+2
+            search_fields.append(term)
+        else:
+            break
+
+    filters = {}
+    all_search_terms = []
+    l_l_part_of_speech_freqs = []
+    if search_fields:
+        stmts, no_stmts, no_stmts_filtered = filter_statements_cached(search_fields, filters)
+
+        l_l_part_of_speech_freqs = get_l_l_part_of_speech_freqs(stmts, request)
+
+        for field in search_fields:
+            for term in field.split(','):
+                all_search_terms.append(term)
+        stmts = color_search_words(stmts, all_search_terms)
+    else:
+        stmts = None
+        no_stmts_filtered = 0
+
+    if stmts and stmts.exists():
+        # number_of_statements = stmts.count()
+        first_date = stmts[0].document.date
+        last_date = stmts.reverse()[0].document.date
+        speaker_ids = stmts.values_list('speaker')
+        # print(speaker_ids)
+        speaker_no_statements = {}
+
+        for i in speaker_ids:
+            the_id = i[0]
+            speaker = Speaker.objects.get(pk=the_id)
+
+            if speaker in speaker_no_statements:
+                speaker_no_statements[speaker] += 1
+            else:
+                speaker_no_statements[speaker] = 1
+
+        party_no_statements = {}
+        for speaker in speaker_no_statements:
+            party = speaker.party.abbrev
+            if party in party_no_statements:
+                party_no_statements[party] += speaker_no_statements[speaker]
+            else:
+                party_no_statements[party] = speaker_no_statements[speaker]
+
+        url_search_words_add = request.get_full_path().split('/')[-1]
+
+        d_speaker_counts = pos_freq_dic('speaker_stmt_count')
+        #print d_speaker_counts
+
+        l_stmts_no_speaker = sorted(
+            [
+                (
+                    no_stmts, speaker.name,
+                    speaker.link_decorator() + url_search_words_add,
+                    speaker.function.name,
+                    speaker.function.link_decorator() + url_search_words_add,
+                    speaker.party.abbrev,
+                    speaker.party.link_decorator() + url_search_words_add,
+                    round(no_stmts / d_speaker_counts[unicode(speaker)] * 100, 1)
+                ) for speaker, no_stmts in speaker_no_statements.iteritems()
+            ], key=lambda x: x[:2])[::-1][:20]
+        # print(l_stmts_no_speaker)
+
+        l_party_no_statements = sorted([(no_stmts, party) for party, no_stmts in party_no_statements.iteritems()])[::-1]
+
+    else:
+        l_stmts_no_speaker = []
+        first_date = "never"
+        last_date = 'never'
+        l_party_no_statements = []
+
+    form = """<form name="word-search-form" method="GET">"""
+    form += """<input type="submit" value="%s"/>""" % _("Suchen")
+    for i in range(num_search_fields):
+        val = request.GET.get("word%s" % i, "")
+        form += """ <input type="text" name="word%s" placeholder="%s" value="%s"/>""" % (
+            i, _("search word"), val)
+    form += "</form>"
+
+    ctx = {
+        "title": "%s" % "Statements Suche",
+        "form": form,
+        "statements": stmts,
+        "number_of_statements": no_stmts_filtered,
+        "first_date": first_date,
+        "last_date": last_date,
+        "l_all_search_terms": all_search_terms,
+        "l_stmts_no_speaker": l_stmts_no_speaker,
+        "l_party_no_statements": l_party_no_statements,
+        "l_l_part_of_speech_freqs": l_l_part_of_speech_freqs,
+    }
+
+    return render(request, "basics/statements_search.html", ctx)
+
+
 def function_view(request, id):
     try:
         function = Function.objects.get(pk=id)
@@ -383,9 +489,9 @@ def party_view(request, id):
     }
 
     if search_fields:
-        stmts, no_stmts, no_stmts_filtered = filter_statements(search_fields, filters)
+        stmts, no_stmts, no_stmts_filtered = filter_statements_cached(search_fields, filters)
 
-        l_l_part_of_speech_freqs = get_l_l_part_of_speech_freqs(stmts)
+        l_l_part_of_speech_freqs = get_l_l_part_of_speech_freqs(stmts, request)
 
         all_search_terms = []
         for field in search_fields:
