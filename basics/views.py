@@ -11,7 +11,8 @@ from models import *
 
 from views_helper import (get_l_l_part_of_speech_freqs, color_search_words,
                           filter_statements, filter_statements_cached,
-                          order_stmts_by_speaker_stmt_blocks, pos_freq_dic)
+                          order_stmts_by_speaker_stmt_blocks, pos_freq_dic,
+                          count_speaker_party_from_statements_cached)
 
 
 #def default_redirect(request):
@@ -336,52 +337,10 @@ def statements_search_view_cached(request):
         stmts = None
         no_stmts_filtered = 0
 
-    print("COUNT %s" % (datetime.datetime.now() - time))
     if stmts:
-        # number_of_statements = stmts.count()
-        first_date = stmts[0].document.date
-        last_date = stmts.reverse()[0].document.date
-        speaker_ids = stmts.values_list("speaker")
-        # print(speaker_ids)
-        speaker_no_statements = {}
-
-        for i in speaker_ids:
-            the_id = i[0]
-            speaker = Speaker.objects.get(pk=the_id)
-
-            if speaker in speaker_no_statements:
-                speaker_no_statements[speaker] += 1
-            else:
-                speaker_no_statements[speaker] = 1
-
-        party_no_statements = {}
-        for speaker in speaker_no_statements:
-            party = speaker.party.abbrev
-            if party in party_no_statements:
-                party_no_statements[party] += speaker_no_statements[speaker]
-            else:
-                party_no_statements[party] = speaker_no_statements[speaker]
-
-        url_search_words_add = request.get_full_path().split('/')[-1]
-
-        d_speaker_counts = pos_freq_dic('speaker_stmt_count')
-        #print d_speaker_counts
-
-        l_stmts_no_speaker = sorted(
-            [
-                (
-                    no_stmts, speaker.name,
-                    speaker.link_decorator() + url_search_words_add,
-                    speaker.function.name,
-                    speaker.function.link_decorator() + url_search_words_add,
-                    speaker.party.abbrev,
-                    speaker.party.link_decorator() + url_search_words_add,
-                    round(no_stmts / d_speaker_counts[unicode(speaker)] * 100, 1)
-                ) for speaker, no_stmts in speaker_no_statements.iteritems()
-            ], key=lambda x: x[:2])[::-1][:20]
-        # print(l_stmts_no_speaker)
-
-        l_party_no_statements = sorted([(no_stmts, party) for party, no_stmts in party_no_statements.iteritems()])[::-1]
+        cachekey = "count_statements_%s" % [search_fields, filters]
+        l_stmts_no_speaker, l_party_no_statements, \
+            first_date, last_date = count_speaker_party_from_statements_cached(cachekey, stmts, request)
 
     else:
         l_stmts_no_speaker = []
@@ -400,7 +359,7 @@ def statements_search_view_cached(request):
     ctx = {
         "title": "%s" % "Statements Suche",
         "form": form,
-        "statements": stmts,
+        "statements": stmts[:2],
         "number_of_statements": no_stmts_filtered,
         "first_date": first_date,
         "last_date": last_date,

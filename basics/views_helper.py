@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*
 
 from __future__ import unicode_literals
-import codecs
+import codecs, datetime
 from models import *
 import os
 
@@ -192,3 +192,71 @@ def order_stmts_by_speaker_stmt_blocks(stmts, all_search_terms):
         l_speakers_block_nos_stmts.append([speaker, l_block_nos_stmts])
 
     return l_speakers_block_nos_stmts, l_speakers, no_stmt_blocks
+
+
+
+def count_speaker_party_from_statements(stmts, request):
+    time = datetime.datetime.now()
+    print("COUNT %s" % (datetime.datetime.now() - time))
+    # number_of_statements = stmts.count()
+    first_date = stmts[0].document.date
+    last_date = stmts.reverse()[0].document.date
+    print(stmts.count())
+    speaker_ids = set(i[0] for i in stmts.values_list("speaker"))
+    # print(speaker_ids)
+    speaker_no_statements = {}
+
+    print("%s COUNT speakers" % (datetime.datetime.now() - time))
+    print("len speaker_ids %s" % len(speaker_ids))
+    for i in speaker_ids:
+        speaker = Speaker.objects.get(pk=i)
+
+        if speaker in speaker_no_statements:
+            speaker_no_statements[speaker] += 1
+        else:
+            speaker_no_statements[speaker] = 1
+
+    print("%s COUNT parties" % (datetime.datetime.now() - time))
+    party_no_statements = {}
+    for speaker in speaker_no_statements:
+        party = speaker.party.abbrev
+        if party in party_no_statements:
+            party_no_statements[party] += speaker_no_statements[speaker]
+        else:
+            party_no_statements[party] = speaker_no_statements[speaker]
+
+    url_search_words_add = request.get_full_path().split('/')[-1]
+
+    print("%s COUNT pos_freq" % (datetime.datetime.now() - time))
+    d_speaker_counts = pos_freq_dic('speaker_stmt_count')
+    # print d_speaker_counts
+
+    print("%s COUNT sort" % (datetime.datetime.now() - time))
+    l_stmts_no_speaker = sorted(
+        [
+            (
+                no_stmts, speaker.name,
+                speaker.link_decorator() + url_search_words_add,
+                speaker.function.name,
+                speaker.function.link_decorator() + url_search_words_add,
+                speaker.party.abbrev,
+                speaker.party.link_decorator() + url_search_words_add,
+                round(no_stmts / d_speaker_counts[unicode(speaker)] * 100, 1)
+            ) for speaker, no_stmts in speaker_no_statements.iteritems()
+            ], key=lambda x: x[:2])[::-1][:20]
+    # print(l_stmts_no_speaker)
+
+    print("%s COUNT sort party" % (datetime.datetime.now() - time))
+    l_party_no_statements = sorted([(no_stmts, party) for party, no_stmts in party_no_statements.iteritems()])[::-1]
+
+    return l_stmts_no_speaker, l_party_no_statements, first_date, last_date
+
+
+def count_speaker_party_from_statements_cached(cachekey, stmts, request):
+    obj = PickleCache.restore(cachekey)
+    if obj is not None:
+        return obj
+    else:
+        l_speaker, l_party, first_date, last_date = count_speaker_party_from_statements(stmts, request)
+        PickleCache.store(cachekey, (l_speaker, l_party, first_date, last_date))
+        return l_speaker, l_party, first_date, last_date
