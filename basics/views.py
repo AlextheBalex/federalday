@@ -2,6 +2,8 @@
 
 from __future__ import unicode_literals
 
+import datetime
+
 from django.shortcuts import render, Http404
 from django.utils.translation import ugettext_lazy as _
 
@@ -313,14 +315,19 @@ def statements_search_view_cached(request):
         else:
             break
 
+    time = datetime.datetime.now()
+    print("FILTER %s" % (datetime.datetime.now()-time))
+
     filters = {}
     all_search_terms = []
     l_l_part_of_speech_freqs = []
     if search_fields:
         stmts, no_stmts, no_stmts_filtered = filter_statements_cached(search_fields, filters)
 
+        print("FREQ %s" % (datetime.datetime.now() - time))
         l_l_part_of_speech_freqs = get_l_l_part_of_speech_freqs(stmts, request)
 
+        print("COLOR %s" % (datetime.datetime.now() - time))
         for field in search_fields:
             for term in field.split(','):
                 all_search_terms.append(term)
@@ -329,11 +336,12 @@ def statements_search_view_cached(request):
         stmts = None
         no_stmts_filtered = 0
 
-    if stmts and stmts.exists():
+    print("COUNT %s" % (datetime.datetime.now() - time))
+    if stmts:
         # number_of_statements = stmts.count()
         first_date = stmts[0].document.date
         last_date = stmts.reverse()[0].document.date
-        speaker_ids = stmts.values_list('speaker')
+        speaker_ids = stmts.values_list("speaker")
         # print(speaker_ids)
         speaker_no_statements = {}
 
@@ -401,9 +409,10 @@ def statements_search_view_cached(request):
         "l_party_no_statements": l_party_no_statements,
         "l_l_part_of_speech_freqs": l_l_part_of_speech_freqs,
     }
-
-    return render(request, "basics/statements_search.html", ctx)
-
+    print("RENDER %s" % (datetime.datetime.now() - time))
+    res = render(request, "basics/statements_search.html", ctx)
+    print("DONE %s" % (datetime.datetime.now()-time))
+    return res
 
 def function_view(request, id):
     try:

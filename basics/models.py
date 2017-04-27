@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-import json
+from picklefield.fields import PickledObjectField
 
 from django.db import models
 from django.urls import reverse
@@ -120,25 +120,24 @@ class Statistics(models.Model):
     active_documents_ordered = models.IntegerField(verbose_name=("number of statement blocks ordered by number of statements"))'''
 
 
-class JsonCache(models.Model):
+class PickleCache(models.Model):
     identifier = models.TextField(verbose_name=_("Identifier"), db_index=True)
-    json_store = models.TextField(verbose_name=_("JSON"))
+    pickle_store = PickledObjectField(verbose_name=_("Store"))
 
     @classmethod
     def store(cls, key, value):
-        jsonstr = json.dumps(value)
         try:
-            o = JsonCache.objects.get(identifier=key)
-            o.json_store = value
+            o = PickleCache.objects.get(identifier=key)
+            o.pickle_store = value
             o.save()
             return o
-        except JsonCache.DoesNotExist:
-            return JsonCache.objects.create(identifier=key, json_store=jsonstr)
+        except PickleCache.DoesNotExist:
+            return PickleCache.objects.create(identifier=key, pickle_store=value)
 
     @classmethod
     def restore(cls, key):
         try:
-            o = JsonCache.objects.get(identifier=key)
-            return json.loads(o.json_store)
-        except JsonCache.DoesNotExist:
+            o = PickleCache.objects.get(identifier=key)
+            return o.pickle_store
+        except PickleCache.DoesNotExist:
             return None

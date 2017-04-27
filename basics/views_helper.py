@@ -31,7 +31,7 @@ def get_l_l_part_of_speech_freqs(stmts, request):
 
     l_pos_no_words = [0.0, 0.0, 0.0, 0.0, 0.0]
 
-    no_stmts = float(len(stmts))
+    no_stmts = float(stmts.count())
 
     for stmt in stmts:
         l_nouns, l_adjectives, l_verbs, l_other_words = stmt.str_nouns.split('|'), stmt.str_adjectives.split(
@@ -141,28 +141,23 @@ def filter_statements(search_fields, filters):
 def filter_statements_cached(search_fields, filters):
 
     key = "filter_statements_%s" % [search_fields, filters]
-    res = JsonCache.restore(key=key)
+    res = PickleCache.restore(key=key)
     if res is None:
         stmts, no_stmts, no_stmts_filtered = filter_statements(search_fields, filters)
         obj = {
             "no_stmts": no_stmts,
             "no_stmts_filtered": no_stmts_filtered,
-            "stmts": [x.id for x in stmts]
+            "stmts": stmts,
         }
-        JsonCache.store(key, obj)
+        PickleCache.store(key, obj)
         print("CACHE STORED")
         return stmts, no_stmts, no_stmts_filtered
     else:
         print("CACHE RESTORED")
-        ids = res["stmts"]
-        #stmts = None
-        #for i in ids:
-        #    if stmts is None:
-        #        stmts = RegularStatement.objects.filter(id=i)
-        #    else:
-        #        stmts |= RegularStatement.objects.filter(id=i)
-        stmts = [RegularStatement.objects.get(id=i) for i in ids]
-        return stmts, res["no_stmts"], res["no_stmts_filtered"]
+        #query =
+        #qset = RegularStatement.objects.all()
+        #qset.query = query
+        return res["stmts"], res["no_stmts"], res["no_stmts_filtered"]
 
 
 def order_stmts_by_speaker_stmt_blocks(stmts, all_search_terms):
