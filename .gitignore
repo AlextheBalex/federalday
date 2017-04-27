@@ -1,6 +1,8 @@
 *.xml
 *.pdf
 *secret_key*
+*.txt
+tools/data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

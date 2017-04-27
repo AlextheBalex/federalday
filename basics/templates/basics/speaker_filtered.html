@@ -4,16 +4,66 @@
 
 {{ form|safe }}
 
-<h3>Statistik gefiltert duch die Suchbegriffe:
+<h3>Aussagen gefiltert durch die Suchbegriffe:
     {% for w in search_words %}
         {% if forloop.counter0 %} &amp; {% endif %}
         <b>{{ w }}</b>
     {% endfor %}
 </h3>
-<ul>
-    <li>Statements Anzahl: {{ number_of_statements }}</li>
-    <li>Hat zu dem Thema gesprochen im Zeitraum von {{ first_date }} - {{ last_date }} in {{ number_of_active_dates }} Sitzungen</li>
-</ul>
+<table align="center">
+    <tr>
+        <th class="table_title" colspan="2">Statistik</th>
+    </tr>
+    <tr>
+        <td>Anzahl an Statements</td>
+        <td class="number">{{ number_of_statements }}</td>
+    </tr>
+    <tr>
+        <td>Anzahl an Aussageblöcken</td>
+        <td class="number">{{ number_of_statement_blocks }}</td>
+    </tr>
+    {% for leg_period, no_stmts, no_active_dates in l_leg_period_no_stmts %}
+        <tr>
+            <td>Wahlperiode {{ leg_period }}</td>
+            <td class="number">{{ no_stmts }} Aussagen in {{ no_active_dates }} Sitzungen</td>
+        </tr>
+    {% endfor %}
+    <tr>
+        <td>Aktiver Zeitraum</td>
+        <td class="number">{{ first_date }} - {{ last_date }}</td>
+    </tr>
+    <tr>
+        <td>Aktive Sitzungen</td>
+        <td class="number">{{ number_of_active_dates }}</td>
+    </tr>
+</table>
+
+<div class="collapse_button"></div>
+
+{% for part_of_speech, l_word_freq in l_l_part_of_speech_freqs %}
+
+    <table class="inline">
+        <tr>
+            <th colspan="3">{{ part_of_speech }} Häufigkeiten</th>
+        </tr>
+
+        {% for rel_freq, abs_freq, word, further_search_link in l_word_freq %}
+            {% if forloop.counter0 < 3 %}
+            <tr>
+                <td><a href = "{{ further_search_link }}">{{ word | safe }}</a></td>
+                <td class="number">{{ rel_freq }}</td>
+                <td class="number">{{ abs_freq }}</td>
+            </tr>
+            {% else %}
+            <tr class="hideable">
+                <td><a href = "{{ further_search_link }}">{{ word | safe }}</a></td>
+                <td class="number">{{ rel_freq }}</td>
+                <td class="number">{{ abs_freq }}</td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+    </table>
+{% endfor %}
 
 {% regroup statements by document as stmts_list %}
 
@@ -22,7 +72,7 @@
     <h3>{{ stmts.grouper.date }} - <a href="{{ stmts.grouper.url }}">Dokument-Id:{{stmts.grouper.document_id}}</a></h3>
     <ul class="b">
         {% for stmt in stmts.list %}
-          <li><strong>S.{{ stmt.page }}:</strong> {{ stmt.text }}</li><br>
+          <li><strong>S.{{ stmt.page }}:</strong> {{ stmt.text | safe }}</li><br>
         {% endfor %}
     </ul>
     {% endfor %}

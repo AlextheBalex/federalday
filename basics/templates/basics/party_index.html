@@ -5,7 +5,7 @@
 <table border="1">
 {% for s in parties %}
     <tr>
-        <td>{{ s.abbrev }}</td>
+        <td><a href="{{ s.link_decorator }}">{{ s.abbrev }}</a></td>
         <td>{{ s.num_statements_decorator }}</td>
     </tr>
 

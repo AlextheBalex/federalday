@@ -16,10 +16,10 @@ Including another URLconf
 from django.conf.urls import url
 from django.conf.urls import include
 from django.contrib import admin
-from basics.views import default_redirect
+#from basics.views import default_redirect
 
 urlpatterns = [
     url(r'^admin/',  admin.site.urls),
     url(r'^basics/', include("basics.urls")),
-    url(r'^',        default_redirect)
+    #url(r'^',        default_redirect)
 ]

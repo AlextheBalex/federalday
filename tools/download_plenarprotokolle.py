@@ -23,20 +23,21 @@ def download(url):
     try: 
         webFile = urllib2.urlopen(url)
     except urllib2.HTTPError:
-        print "failed";
+        print "failed"
         return False
         
     if webFile.getcode() != 200:
         return False
     if webFile.geturl().find("navigation") != -1:
-        return False;
+        return False
     
     # filename & dir
-    local_name = "./pdfs/plenarprotokolle/" + url.split(base_url)[-1]
-    local_dir = os.path.dirname(local_name)
+    local_name = "/home/foritisiemperor/Music/transform_pdf/app/pdfs/plenarprotokolle/" + url.split(base_url)[-1]
+    local_dir = local_name[:-9]
+    print local_name, 9
     if os.path.exists(local_dir) == False:
         if os.makedirs(local_dir) == False:
-            print "failed creating dir " + local_dir
+            print "failed creating dir " + local_name
             return False
     
     # save
@@ -48,7 +49,7 @@ def download(url):
 
 
 def get_last_pdf_legnum_docnum():
-    file_path = '/home/foritisiemperor/Music/transform_pdf/app/pdfs/plenarprotokolle'
+    file_path = '/home/foritisiemperor/Music/transform_pdf/app/pdfs/plenarprotokolle/'
     l_directories = listdir(file_path)
     try:
         latest_leg_period = int(sorted(l_directories)[-1])
@@ -63,7 +64,7 @@ def get_last_pdf_legnum_docnum():
     except IndexError:
         return latest_leg_period, 1
     
-#print get_last_pdf_docnum()
+# print get_last_pdf_docnum()
     
 
 def download_latest_plenarprotokolle():
@@ -74,7 +75,8 @@ def download_latest_plenarprotokolle():
         #if period == 1: start = 4683
         
         for docnum in xrange(start, 999):
-            if download( get_name(period, docnum) ) == False:
+            if download(get_name(period, docnum)) == False:
                 print "failed"
                 break
-#download_plenarprotokolle()
+
+# download_latest_plenarprotokolle()

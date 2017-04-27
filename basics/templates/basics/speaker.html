@@ -4,6 +4,8 @@
 
 {{ form|safe }}
 
+
+
 <table align="center">
     <tr>
         <th class="table_title" colspan="2">Statistik</th>
@@ -16,6 +18,12 @@
         <td>Anzahl an Aussageblöcken</td>
         <td class="number">{{ number_of_statement_blocks }}</td>
     </tr>
+    {% for leg_period, no_stmts, no_active_dates in l_leg_period_no_stmts %}
+        <tr>
+            <td>Wahlperiode {{ leg_period }}</td>
+            <td class="number">{{ no_stmts }} Aussagen in {{ no_active_dates }} Sitzungen</td>
+        </tr>
+    {% endfor %}
     <tr>
         <td>Aktiver Zeitraum</td>
         <td class="number">{{ first_date }} - {{ last_date }}</td>
@@ -26,15 +34,42 @@
     </tr>
 </table>
 
+<div class="collapse_button"></div>
+
+{% for part_of_speech, l_word_freq in l_l_part_of_speech_freqs %}
+
+    <table class="inline">
+        <tr>
+            <th colspan="3">{{ part_of_speech }} Häufigkeiten</th>
+        </tr>
+
+        {% for rel_freq, abs_freq, word, further_search_link in l_word_freq %}
+            {% if forloop.counter0 < 3 %}
+            <tr>
+                <td><a href = "{{ further_search_link }}">{{ word | safe }}</a></td>
+                <td class="number">{{ rel_freq }}</td>
+                <td class="number">{{ abs_freq }}</td>
+            </tr>
+            {% else %}
+            <tr class="hideable">
+                <td><a href = "{{ further_search_link }}">{{ word | safe }}</a></td>
+                <td class="number">{{ rel_freq }}</td>
+                <td class="number">{{ abs_freq }}</td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+    </table>
+{% endfor %}
+
 
 {% regroup statements by group_number as stmts_list %}
 
 <ul class="a">
 {% for stmts in stmts_list %}
-    <h3>{{ stmts.grouper }}. Aussagenblock</h3>
+    <h3>{{ stmts.grouper }}. Aussagenblock <a href="{{ stmts.list.0.document.url }}">{{ stmts.list.0.document }}</a></h3>
     <ul class="b">
         {% for stmt in stmts.list %}
-          <li><a href="{{ stmt.document.url }}">{{ stmt.document }}</a> – S.{{ stmt.page }}: {{ stmt.text }}</li><br>
+          <li>S.{{ stmt.page }}: {{ stmt.text }}</li><br>
         {% endfor %}
     </ul>
     {% endfor %}

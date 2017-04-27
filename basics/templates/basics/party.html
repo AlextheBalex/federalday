@@ -26,44 +26,27 @@
     </tr>
 </table>
 
+<div class="collapse_button"></div>
+
 <table align="center">
     <tr>
-        <th class="table_title" colspan="2">Amtsinhaber</th>
+        <th class="table_title" colspan="2">Abgeordnete</th>
     </tr>
     {% for speaker in l_speakers %}
-
-        <tr>
-            <td><a href="{{ speaker.link_decorator }}">{{ speaker.name }}</a></td>
-        </tr>
+        {% if forloop.counter0 < 3 %}
+            <tr>
+                <td><a href="{{ speaker.link_decorator }}">{{ speaker.name }}</a></td>
+                <td>{{ speaker.number_of_statements_decorator }}</td>
+            </tr>
+        {% else %}
+            <tr class="hideable">
+                <td><a href="{{ speaker.link_decorator }}">{{ speaker.name }}</a></td>
+                <td>{{ speaker.number_of_statements_decorator }}</td>
+            </tr>
+        {% endif %}
     {% endfor %}
 </table>
 
-<div class="collapse_button"></div>
-
-{% for part_of_speech, l_word_freq in l_l_part_of_speech_freqs %}
-
-    <table class="inline">
-        <tr>
-            <th colspan="3">{{ part_of_speech }} Häufigkeiten</th>
-        </tr>
-
-        {% for rel_freq, abs_freq, word in l_word_freq %}
-            {% if forloop.counter0 < 3 %}
-            <tr>
-                <td>{{ word }}</td>
-                <td class="number">{{ rel_freq }}</td>
-                <td class="number">{{ abs_freq }}</td>
-            </tr>
-            {% else %}
-            <tr class="hideable">
-                <td>{{ word }}</td>
-                <td class="number">{{ rel_freq }}</td>
-                <td class="number">{{ abs_freq }}</td>
-            </tr>
-            {% endif %}
-        {% endfor %}
-    </table>
-{% endfor %}
 
 <ul class="a">
 {% for speaker, l_stmt_blocks in l_speakers_block_nos_stmts %}

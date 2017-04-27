@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'basics.apps.BasicsConfig',
+    #'django_sorting',
 ]
 
 MIDDLEWARE = [
@@ -50,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    #'django_sorting.middleware.SortingMiddleware',
 ]
 
 ROOT_URLCONF = 'federalday.urls'
@@ -82,6 +84,19 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
+'''DATABASES = {
+    'postgres': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'dragon',
+        'USER': 'dragon',
+        'PASSWORD': 'dragon',
+        'HOST': 'localhost',
+        'PORT': '',
+    }
+}'''
+
+
 
 
 # Password validation
@@ -121,3 +136,5 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
 STATIC_URL = '/static/'
+
+

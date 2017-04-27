@@ -140,7 +140,7 @@ def get_l_bbox_textboxes_from_xml(xml_path):
                 page_bbox = ','.join([page, bbox])
                 #print type(bbox)
                 #break
-                bbox_textline = [page_bbox, textline_text]
+                bbox_textline = [page_bbox, re.sub(u'\([A-Z]\)', u'', textline_text)]
                 l_bbox_textlines.append(bbox_textline)
                 #l_text_boxes.append('\n')
             #break
@@ -166,17 +166,37 @@ def order_page_side(l_side, min_x1_side, sec_min_x1_side):
     sec_min_x1_side += 5
     end_line_before = ''
     interruption = False
+    
+    d_side = {}
+    y1_before = 0
+    for y1, x1, line in l_side:
+        if y1 in d_side:
+            d_side[y1].append((x1, line))
+        else:
+            d_side[y1] = [(x1, line)]
+    #print d_side
+    for (k, l_x1_line) in d_side.iteritems():
+        if len(l_x1_line) > 1:
+            l_x1_line = sorted(l_x1_line)
+            combined_line = ' '.join([a[1] for a in l_x1_line])
+            d_side[k] = (l_x1_line[0][0], combined_line)
+        else:
+            d_side[k] = d_side[k][0]
+            
+    l_side = sorted([(k, v) for k, v in d_side.iteritems()])[::-1]
+    l_side = [a[1] for a in l_side]
+            
     for index, (x1, line) in enumerate(l_side):
         #if '(Schluss' in line:
         #    print line, 999
         line = line.strip()
         
-        if not line or re.match(u'\([A-Z]\)', line):
+        if not line: #or re.match(u'\([A-Z]\)', line):
             end_line_before = ''
             continue
         if end_line_before == ')':
             interruption = False
-        if x1 > sec_min_x1_side and line.startswith('('):
+        if (x1 > sec_min_x1_side or '[' in line) and line.startswith('('):
             #interruption = True
             #if line[-1] == ')':
             #    interruption = False
@@ -231,17 +251,17 @@ def order_page(l_page_x1_x2_lines, l_page_x1, l_page_x2):
     l_left_lines = []
     l_right_lines = []
     
-    for x1, x2, line in l_page_x1_x2_lines:
+    for y1, x1, x2, line in l_page_x1_x2_lines:
         
         if x1 < middle_line:
             l_x1_left.append(x1)
-            l_left.append((x1, line))
+            l_left.append((y1, x1, line))
         elif x1 >= middle_line:
             #if '(Schluss' in line:
             #    schluss = True
             #    print line, 'order_page'
             l_x1_right.append(x1)
-            l_right.append((x1, line))
+            l_right.append((y1, x1, line))
  
     #print len(l_right), 'len l_right'
     #print l_right
@@ -304,7 +324,10 @@ def order_by_page(l_bbox_lines):
     
     d_page_lines_left = {}
     d_page_lines_right = {}
-
+    
+    y1_before = ''
+    l_temp_values_to_sort = []
+    tempx1 = 100
     
     for bbox, line in l_bbox_lines:
         line = line.strip()
@@ -320,6 +343,11 @@ def order_by_page(l_bbox_lines):
         y1 = math.ceil(float(l_bbox[2]))
         
         #line = ''.join([line, '+', str(page)])
+        #if y1 == y1_before:
+            #l_temp_values_to_sort.append([y1, tempx1, #x2, line])
+            #tempx1 -= 1
+            
+            
         d_page_bbox_line[page].append([y1, x1, x2, line])
         d_page_l_x1[page].append(x1)
         d_page_l_x2[page].append(x2)
@@ -327,7 +355,7 @@ def order_by_page(l_bbox_lines):
     for page in xrange(1, last_page + 1):
         #print 'page', page
         try:            
-            d_page_bbox_line[page] = [a[1:] for a in sorted(d_page_bbox_line[page])[::-1]]
+            d_page_bbox_line[page] = [a for a in sorted(d_page_bbox_line[page])[::-1]]
             d_page_lines_left[page], d_page_lines_right[page] = order_page(d_page_bbox_line[page], d_page_l_x1[page], d_page_l_x2[page])
         except ValueError:
             #print page
@@ -392,7 +420,7 @@ def correct_split_words(lines_list):
                 next_line = lines_list[index+1]
             except IndexError:
                 break
-            if re.match(u'^[a-zäüö].{3,}', next_line):
+            if re.match(u'^[a-zäüöß].{3,}', next_line) and not (next_line.startswith('und ') or next_line.startswith('oder ')):
                 #print 1, next_line
                 li_words_line = line.split()
                 word_first_part = li_words_line[-1][:-1]
@@ -404,6 +432,25 @@ def correct_split_words(lines_list):
                 d_trans_lines[index+1] = next_line
                 index += 1
                 continue
+            elif next_line.startswith('|page'):
+                try:
+                    next_next_line = lines_list[index+2]
+                except IndexError:
+                    break
+                if re.match(u'^[a-zäüöß].{3,}', next_next_line) and not (next_next_line.startswith('und ') or next_next_line.startswith('oder ')):
+                    li_words_line = line.split()
+                    word_first_part = li_words_line[-1][:-1]
+                    line = ' '.join(li_words_line[:-1])
+                    #print line, 1
+                    next_next_line = ''.join([word_first_part, next_next_line])
+                    #print next_line, 2
+                    d_trans_lines[index] = line
+                    d_trans_lines[index+1] = next_line
+                    d_trans_lines[index+2] = next_next_line
+                    index += 2
+                    #print next_line, 1
+                    continue
+                    
         elif len_line > 15 and line[-7:] == '-[bold]':
             try:
                 next_line = lines_list[index+1]
@@ -481,9 +528,12 @@ def line_speaker_match(line):
         
         if '(' in maybe_speaker and not ')' in maybe_speaker or (re.match(u'.*\d{2,}.*', maybe_speaker) and not u'(BÜNDNIS' in maybe_speaker):
             return False
-        for i in ['mitgeteil', 'gesagt', 'zitier', 'bekannt', 'agesordnung', 'Fortsetzung', '(TA)', '(UN']:
+        for i in ['mitgeteil', 'gesagt', 'zitier', 'bekannt', 'agesordnung', 'Fortsetzung', '(TA)', '(UN', '(Dr.']:
             if i in maybe_speaker:
                 return False
+                
+        if '[' in line and not '[bold]' in line:
+            return False
         
         if re.match(u'^.{3,}\(.+\)\s*(\[bold\]\s*)*$', maybe_speaker) or ',' in maybe_speaker or u'präsiden' in maybe_speaker.lower():
             #print 2
@@ -588,13 +638,11 @@ def mark_speakers(l_lines):
             
     return l_lines_out_2
                 
-#print mark_speakers(l_lines)
+# print mark_speakers(l_lines)
 
 
 def clean_lines(l_lines):
-    #print 'yes i have been called'
-    #l_lines = [line for line in l_lines if not re.match(u'\([A-Z]\)', line)]
-    #l_lines = ['o' for line in l_lines if not re.match(u'\([A-Z]\)', line)]
+
     l_lines = [line.replace(u'(cid:228)', u'ä') for line in l_lines]
     l_lines = [line.replace(u'(cid:252)', u'ü').replace(u'(cid:223)', u'ß').replace(u'(cid:150)', u'–').replace(u'(cid:220)', u'Ü').replace(u'(cid:246)', u'ö').replace(u'(cid:132)', u'„').replace(u'(cid:147)', u'“').replace(u'(cid:133)', u'...').replace(u'(cid:214)', u'Ö').replace(u'(cid:146)', u"'").replace(u'(cid:240)', u'ğ') for line in l_lines]
     
@@ -611,8 +659,7 @@ def clean_lines_2(l_lines):
     
     l_lines = [line.replace('(', ' (') for line in l_lines]
     l_lines = [u' '.join(line.split()) for line in l_lines]
-    l_lines = [line.replace(' :', ':').replace('[bold]', '').replace(u'GRÜ- NEN', u'GRÜNEN') for line in l_lines]
-    #l_lines = [re.sub(u'\|page\d+\|', u'', line) for line in l_lines]
+    l_lines = [line.replace(' :', ':').replace('[bold]', '').replace(u'GRÜ- NEN', u'GRÜNEN').replace('- ', '-').replace('-und ', '- und ').replace('-oder ', '- oder').replace('/ ', '/') for line in l_lines]
     
     for index, line in enumerate(l_lines):
         l_lines[index] = line.replace(u'In nern', u'Innern').replace(u'Bundes kanzler', u'Bundeskanzler').replace(u'Bun des', u'Bundes').replace(u'Bun- d', u'Bund').replace(u'Bundes- m', u'Bundesm').replace(u'Finan- zen', u'Finanzen').replace(u'Um- welt', u'Umwelt').replace(u'Ver- braucher', u'Verbraucher').replace(u'In- nern', u'Innern').replace(u'Bundes- ka', u'Bundeska').replace(' .', '.').replace('Ab schiebung', 'Abschiebung').replace(u'\xad ', '').replace(u'\xad', '-')
@@ -842,6 +889,8 @@ def delete_useless_empty_lines(l_lines):
             if line.startswith('(') and ')' not in line[:-1]:
                 l_new_lines.append('')
             l_new_lines.append(line)
+        if line.endswith(')'):
+            l_new_lines.append('')
             
         index += 1
         
@@ -885,9 +934,11 @@ def transform_pdf(pdf_name):
     if os.path.exists(xml_dir) == False:
         os.makedirs(xml_dir)
     output_path = pdf_path[:-4].replace('pdfs', 'txts') + '.txt'
-    print xml_path
+    print xml_path, 1
     if not os.path.exists(xml_path):
+        print 2
         bash_command = 'pdf2txt.py -o %s -t xml %s' %(xml_path, pdf_path)
+        print xml_path, 'xml path'
         #print bash_command
         os.system(bash_command)
         
@@ -941,7 +992,7 @@ def transform_pdf(pdf_name):
     return True
         
 
-transform_pdf('17049.pdf')
+transform_pdf('18120.pdf')
 
 #l = [u""">Das Gesetz dient insgesamt drei primären Zielen . Es
 

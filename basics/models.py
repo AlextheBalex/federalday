@@ -29,6 +29,9 @@ class Party(models.Model):
     def num_statements_decorator(self):
         return RegularStatement.objects.filter(speaker__party=self).count()
 
+    def link_decorator(self):
+        return reverse("basics:party", args=(self.pk,))
+
 
 class Function(models.Model):
 
@@ -44,6 +47,13 @@ class Function(models.Model):
         return reverse("basics:function", args=(self.pk,))
 
 
+class StmtBlock(models.Model):
+
+    stmt_block_no = models.IntegerField(verbose_name=_("no of statement_block continuous"))
+    speaker = models.ForeignKey("basics.Speaker", verbose_name=_("who said it"), default=None, null=True)
+    document = models.ForeignKey("basics.Document", verbose_name=_("who said it"), default=None, null=True)
+
+
 class RegularStatement(models.Model):
 
     text = models.TextField(verbose_name=_("text"))
@@ -57,6 +67,8 @@ class RegularStatement(models.Model):
     speaker = models.ForeignKey("basics.Speaker", verbose_name=_("who said it"))
     document = models.ForeignKey("basics.Document", verbose_name=_("source document"), default=None)
     order_id = models.IntegerField(verbose_name=_("order within document"), default=0)
+    stmt_block_no = models.ForeignKey("basics.StmtBlock", verbose_name=_("block of statements that where uttered by one speaker directly after another"), default=0)
+    no_unique_words = models.IntegerField(verbose_name=_('number of unique standardized words of the statement'), default=0)
     page = models.IntegerField(verbose_name=_("page where statement begins"), default=0)
     cleaned_text = models.TextField(verbose_name=_("only letters"), default=None, null=True)
 

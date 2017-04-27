@@ -1,0 +1,101 @@
+{% extends "basics/base.html" %}
+
+{% block content %}
+
+{{ form|safe }}
+
+<div class="button">Click</div>
+
+<table>
+    <tr>
+        <th class="table_title">Sprecher</th>
+        <th class="table_title">Amt/Partei</th>
+        <th class="table_title">Anzahl Statements</th>
+        <th class="table_title">Relative Anzahl</th>
+    </tr>
+    <tr>
+        <td>Insgesamt</td>
+        <td class="number"> {{ number_of_statements }}</td>
+    </tr>
+    {% for no_stmts, speaker, speaker_link, function, function_link, party, party_link, rel_freq in l_stmts_no_speaker %}
+        {% if forloop.counter < 6 %}
+            <tr>
+                <td><a href="{{ speaker_link }}">{{ speaker }}</a></td>
+                {% if function != 'Abgeordnete/r' %}
+                <td><a href="{{ function_link }}">{{ function }}</a></td>
+                {% else %}
+                <td><a href="{{ party_link }}">{{ party }}</a></td>
+                {% endif %}
+                <td>{{ no_stmts }}</td>
+                <td>{{ rel_freq }}</td>
+            </tr>
+        {% else %}
+            <tr class="hideable">
+                <td><a href="{{ speaker_link }}">{{ speaker }}</a></td>
+                {% if function != 'Abgeordnete/r' %}
+                <td><a href="{{ function_link }}">{{ function }}</a></td>
+                {% else %}
+                <td><a href="{{ party_link }}">{{ party }}</a></td>
+                {% endif %}
+                <td>{{ no_stmts }}</td>
+                <td>{{ rel_freq }}</td>
+        {% endif %}
+    {% endfor %}
+</table>
+
+<table>
+    <tr>
+        <th>Partei</th>
+        <th>Anzahl Statements</th>
+    </tr>
+
+    {% for no_stmts, party in l_party_no_statements %}
+        <tr>
+            <td>{{ party }}</td>
+            <td>{{ no_stmts }}</td>
+        </tr>
+    {% endfor %}
+
+</table>
+
+<div class="collapse_button"></div>
+
+{% for part_of_speech, l_word_freq in l_l_part_of_speech_freqs %}
+
+    <table class="inline">
+        <tr>
+            <th colspan="3">{{ part_of_speech }} Häufigkeiten</th>
+        </tr>
+
+        {% for rel_freq, abs_freq, word, further_search_link in l_word_freq %}
+            {% if forloop.counter0 < 3 %}
+            <tr>
+                <td><a href = "{{ further_search_link }}">{{ word | safe }}</a></td>
+                <td class="number">{{ rel_freq }}</td>
+                <td class="number">{{ abs_freq }}</td>
+            </tr>
+            {% else %}
+            <tr class="hideable">
+                <td><a href = "{{ further_search_link }}">{{ word | safe }}</a></td>
+                <td class="number">{{ rel_freq }}</td>
+                <td class="number">{{ abs_freq }}</td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+    </table>
+{% endfor %}
+
+{% regroup statements by document as stmts_list %}
+
+<ul class="a">
+{% for stmts in stmts_list %}
+    <h3>{{ stmts.grouper.date }} - <a href="{{ stmts.grouper.url }}">Dokument-Id:{{stmts.grouper.document_id}}</a></h3>
+    <ul class="b">
+        {% for stmt in stmts.list %}
+          <li><strong>{{stmt.speaker}} S.{{ stmt.page }}:</strong> {{ stmt.text | safe }}</li><br>
+        {% endfor %}
+    </ul>
+    {% endfor %}
+</ul>
+
+{% endblock %}

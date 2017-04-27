@@ -83,6 +83,10 @@ table {
     margin-top: 10px;
 }
 
+table.inline {
+    display: inline-table;
+}
+
 
 th, td {
     text-align: left;
@@ -105,4 +109,57 @@ background-color: LightSkyBlue
 
 tr:nth-child(even) {
 background-color: #e6eeff;
+}
+
+span.color0 {
+    color: Red;
+}
+
+span.color1 {
+    color: Blue;
+}
+
+span.color2 {
+    color: Green;
+}
+
+span.color3 {
+    color: Orange;
+}
+
+span.color4 {
+    color: MidnightBlue;
+}
+
+span.color5 {
+    color: HotPink;
+}
+
+span.color6 {
+    color: Grey;
+}
+
+
+.collapse_button {
+    background: linear-gradient(#09092a, MidnightBlue, #2e2ed1, DeepSkyBlue, #2e2ed1, MidnightBlue, #09092a);
+    border: groove;
+    border-color: Black;
+    border-radius: 5px;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+}
+
+.target {
+    background-color: Red; /* Green */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
 }
