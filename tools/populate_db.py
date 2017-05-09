@@ -11,12 +11,11 @@ import os
 from basics.models import *
 from dictionary_functions import simple_dictionary, multi_option_dictionary, multi_option_dictionary_v_always_l
 from standard_word_filter import l_part_of_speech_dics, create_part_of_speech_strings_with_persons_and_wiki_titles
-#from get_fields_from_document import get_document_fields
+# from get_fields_from_document import get_document_fields
 from download_plenarprotokolle import download_latest_plenarprotokolle, get_last_pdf_legnum_docnum
 from fun_with_xml import transform_pdf
 from commons import clean_text_add_spaces
-from analyze_statements import create_file_of_general_word_freqs
-
+from analyze_statements import create_file_of_general_word_freqs, create_file_of_speaker_function_party_stmts_counts
 
 
 d_first_names = simple_dictionary('first_names.txt')
@@ -101,7 +100,7 @@ def get_document_fields(document_path, stmt_block_no):
                 function = 'Abgeordnete/r'
         d_doc[order_id]['function'] = make_functions_gender_neutral(function).strip().replace('Parl. Staatssekretär/in bei der/bei dem Bundesminister/in der Justiz und Verbraucherschutz', 'Parl. Staatssekretär/in bei der/bei dem Bundesminister/in der Justiz und für Verbraucherschutz')
 
-        #for a in ['Bundes­ kanzler']:
+        # for a in ['Bundes­ kanzler']:
         #    if a in d_doc[order_id]['function']:
         #        print(d_doc['document_id'], a)
         text = line.split('|')[-1].split('+page')[0]
@@ -124,7 +123,7 @@ def get_latest_leg_period_doc_num_in_db():
         latest_document_in_db = list(Document.objects.all().order_by("document_id"))[-1]
 
     except IndexError:
-        return 17, 0
+        return 16, 0
     latest_document_in_db_id = str(latest_document_in_db.document_id)
     docnum = latest_document_in_db_id[2:]
     leg_num = latest_document_in_db_id[:2]
@@ -139,7 +138,7 @@ def txts_to_db(l_txt_file_paths, stmt_block_no):
 
         d_doc, stmt_block_no = get_document_fields(file_path, stmt_block_no)
 
-        #print(d_doc.get('document_id'))
+        # print(d_doc.get('document_id'))
         [doc, __] = Document.objects.get_or_create(
             legislative_period=d_doc.get("legislative_period", -1),
             document_id=d_doc.get("document_id", -1),
@@ -164,7 +163,7 @@ def txts_to_db(l_txt_file_paths, stmt_block_no):
                 [func, __] = Function.objects.get_or_create(
                     name=e.get('function'),
                 )
-                #print(party, func)
+                # print(party, func)
                 [speaker, __] = Speaker.objects.get_or_create(
                     name=e.get("speaker"),
                     party=party,
@@ -198,16 +197,18 @@ def txts_to_db(l_txt_file_paths, stmt_block_no):
 def add_statistics():
 
     Statistics.objects.create(
-        no_plenarprotokolle = Document.objects.all().count(),
-        no_speakers = Speaker.objects.all().count(),
-        no_functions = Function.objects.all().count(),
-        no_parties = Party.objects.all().count(),
+        no_plenarprotokolle=Document.objects.all().count(),
+        no_speakers=Speaker.objects.all().count(),
+        no_functions=Function.objects.all().count(),
+        no_parties=Party.objects.all().count(),
     )
 
 def update_database(first_delete_all, transform_pdfs):
 
+    PickleCache.objects.all().delete()
+
     if first_delete_all:
-        #if __name__ == "__main__":
+        # if __name__ == "__main__":
         print(88888)
         StmtBlock.objects.all().delete()
         Speaker.objects.all().delete()
@@ -224,20 +225,20 @@ def update_database(first_delete_all, transform_pdfs):
     # print(get_latest_leg_period_doc_num_in_db(), 999)
 
     leg_nums_to_db = xrange(latest_leg_num_in_db, latest_pdf_legnum + 1)
-    #print(leg_nums_to_db, 99999999)
+    # print(leg_nums_to_db, 99999999)
     stmt_block_no = 0
     for leg_num in leg_nums_to_db:
         l_txt_file_paths = []
-        #print(leg_num, latest_leg_num_in_db, 'leg_num')
+        # print(leg_num, latest_leg_num_in_db, 'leg_num')
         if leg_num == latest_leg_num_in_db:
-            #print(777)
+            # print(777)
             start_docnum = latest_docnum_in_db + 1
         else:
-            #print(888)
+            # print(888)
             start_docnum = 1
 
         for docnum in xrange(start_docnum, 400):
-            #print(docnum, leg_num, 'docnum989898')
+            # print(docnum, leg_num, 'docnum989898')
             pdf_file_name = ''.join([str(leg_num).zfill(2), str(docnum).zfill(3), '.pdf'])
             print('working on pdf', pdf_file_name)
             if transform_pdfs:
@@ -250,15 +251,22 @@ def update_database(first_delete_all, transform_pdfs):
             file_path = get_txt_file_path(txt_directory, leg_num, docnum)
             if not file_path:
                 break
-            #print(file_path, 33333)
+            # print(file_path, 33333)
             l_txt_file_paths.append(file_path)
-        #print(l_txt_file_paths)
+        # print(l_txt_file_paths)
         txts_to_db(l_txt_file_paths, stmt_block_no)
+
     add_statistics()
+
     create_file_of_general_word_freqs()
 
-update_database(False, True)
+    create_file_of_speaker_function_party_stmts_counts()
 
-#print(Document.objects.all())
+# update_database(False, False)
 
-#latest_document_in_db = list(Document.objects.all().order_by("document_id"))[-1]
+# print(Document.objects.all())
+
+# latest_document_in_db = list(Document.objects.all().order_by("document_id"))[-1]
+
+
+PickleCache.objects.all().delete()

@@ -4,6 +4,40 @@
 
 {{ form|safe }}
 
+<table class="no-table-deco">
+    <tr class="no-table-deco">
+        <td class="align-top no-table-deco">
+
+            <table class="inline">
+            <tr>
+                <th>Datum</th>
+                <th>Anzahl</th>
+            </tr>
+
+            {% for count, year in l_count_year %}
+                {% if forloop.counter0 < 3 %}
+                <tr>
+                    <td>{{ year }}</td>
+                    <td class="number">{{ count }}</td>
+                </tr>
+                {% else %}
+                <tr class="hideable">
+                    <td>{{ year }}</td>
+                    <td class="number">{{ count }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+            </table>
+        </td>
+
+        <td class="align-top no-table-deco">
+            {{ plot|safe }}
+        </td>
+
+    </tr>
+</table>
+
+
 <table>
     <tr>
         <th class="table_title">Sprecher</th>
@@ -47,16 +81,42 @@
         <th>Anzahl Statements</th>
     </tr>
 
-    {% for no_stmts, party in l_party_no_statements %}
+    {% for no_stmts, party, rel_freq in l_party_no_statements %}
         <tr>
             <td>{{ party }}</td>
             <td>{{ no_stmts }}</td>
+            <td>{{ rel_freq }}%</td>
         </tr>
     {% endfor %}
 
 </table>
 
 <div class="collapse_button"></div>
+
+
+<table class="inline">
+    <tr>
+        <th>Suchtrefferwort</th>
+        <th>Anzahl</th>
+        <th>%</th>
+    </tr>
+
+    {% for count, rel_count, word in l_counts_words %}
+        {% if forloop.counter0 < 3 %}
+        <tr>
+            <td>{{ word }}</td>
+            <td class="number">{{ count }}</td>
+            <td class="number">{{ rel_count }}</td>
+        </tr>
+        {% else %}
+        <tr class="hideable">
+            <td>{{ word }}</td>
+            <td class="number">{{ count }}</td>
+            <td class="number">{{ rel_count }}</td>
+        </tr>
+        {% endif %}
+    {% endfor %}
+
 
 {% for part_of_speech, l_word_freq in l_l_part_of_speech_freqs %}
 
@@ -82,6 +142,8 @@
         {% endfor %}
     </table>
 {% endfor %}
+
+
 
 {% regroup statements by document as stmts_list %}
 

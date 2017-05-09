@@ -9,10 +9,12 @@ from django.utils.translation import ugettext_lazy as _
 
 from models import *
 
+from tools import bokehplot
 from views_helper import (get_l_l_part_of_speech_freqs, color_search_words,
                           filter_statements, filter_statements_cached,
                           order_stmts_by_speaker_stmt_blocks, pos_freq_dic,
-                          count_speaker_party_from_statements_cached)
+                          count_speaker_party_from_statements_cached,
+                          get_date_counts_from_stmts)
 
 
 #def default_redirect(request):
@@ -118,7 +120,7 @@ def speaker_view(request, id):
         "speaker": speaker,
     }
 
-    stmts, no_stmts, no_stmts_filtered = filter_statements(search_fields, filters)
+    stmts, no_stmts, no_stmts_filtered, l_counts_words = filter_statements(search_fields, filters)
 
     l_l_part_of_speech_freqs = get_l_l_part_of_speech_freqs(stmts, request)
 
@@ -192,6 +194,7 @@ def speaker_view(request, id):
         "l_leg_period_no_stmts": l_leg_period_no_stmts,
         "l_active_dates": l_active_dates,
         "l_l_part_of_speech_freqs": l_l_part_of_speech_freqs,
+        "l_counts_words": l_counts_words,
     }
     if search_fields:
         if not stmts:
@@ -229,6 +232,9 @@ def statements_search_view(request):
         no_stmts_filtered = 0
 
     if stmts and stmts.exists():
+
+        l_count_date = get_date_counts_from_stmts(stmts)
+        print('counted dates')
         # number_of_statements = stmts.count()
         first_date = stmts[0].document.date
         last_date = stmts.reverse()[0].document.date
@@ -279,6 +285,7 @@ def statements_search_view(request):
         first_date = "never"
         last_date = 'never'
         l_party_no_statements = []
+        l_count_date = []
 
     form = """<form name="word-search-form" method="GET">"""
     form += """<input type="submit" value="%s"/>""" % _("Suchen")
@@ -299,6 +306,7 @@ def statements_search_view(request):
         "l_stmts_no_speaker": l_stmts_no_speaker,
         "l_party_no_statements": l_party_no_statements,
         "l_l_part_of_speech_freqs": l_l_part_of_speech_freqs,
+        "l_count_date": l_count_date,
     }
 
     return render(request, "basics/statements_search.html", ctx)
@@ -319,11 +327,12 @@ def statements_search_view_cached(request):
     time = datetime.datetime.now()
     print("FILTER %s" % (datetime.datetime.now()-time))
 
+    plot = ""
     filters = {}
     all_search_terms = []
     l_l_part_of_speech_freqs = []
     if search_fields:
-        stmts, no_stmts, no_stmts_filtered = filter_statements_cached(search_fields, filters)
+        stmts, no_stmts, no_stmts_filtered, l_counts_words = filter_statements_cached(search_fields, filters)
 
         print("FREQ %s" % (datetime.datetime.now() - time))
         l_l_part_of_speech_freqs = get_l_l_part_of_speech_freqs(stmts, request)
@@ -333,9 +342,19 @@ def statements_search_view_cached(request):
             for term in field.split(','):
                 all_search_terms.append(term)
         stmts = color_search_words(stmts, all_search_terms)
+
+        print("COUNT DATES, YEARS %s" % (datetime.datetime.now() - time))
+
+        l_count_year, l_dates, l_counts = get_date_counts_from_stmts(stmts)
+
+        plot = bokehplot.get_plot_markup_xy("Titel", "X", "Y", l_dates, l_counts)  # , x_axis_type="datetime")
+        print(plot)
     else:
         stmts = None
         no_stmts_filtered = 0
+        l_counts_words = []
+        l_count_date = []
+        l_count_year = []
 
     if stmts:
         cachekey = "count_statements_%s" % [search_fields, filters]
@@ -347,13 +366,18 @@ def statements_search_view_cached(request):
         first_date = "never"
         last_date = 'never'
         l_party_no_statements = []
+        l_count_date = []
 
     current_page = request.GET.get("page", 0)
     stmts_per_page = request.GET.get("stmts_per_page", 25)
-    num_stmts = stmts.count()
 
-    first_stmt = max(0,min(num_stmts-stmts_per_page, current_page * stmts_per_page ))
-    last_stmt = min(num_stmts, first_stmt + stmts_per_page)
+    try:
+        num_stmts = stmts.count()
+    except AttributeError:
+        num_stmts = 0
+
+    first_stmt = max(0, min(num_stmts-stmts_per_page, current_page * stmts_per_page ))
+    # last_stmt = min(num_stmts, first_stmt + stmts_per_page)
 
     form = """<form name="word-search-form" method="GET">"""
     form += """<input type="submit" value="%s"/>""" % _("Suchen")
@@ -365,8 +389,9 @@ def statements_search_view_cached(request):
 
     ctx = {
         "title": "%s" % "Statements Suche",
+        "plot": plot,
         "form": form,
-        "statements": stmts[first_stmt:last_stmt],
+        "statements": stmts,#[first_stmt:last_stmt],
         "number_of_statements": no_stmts_filtered,
         "first_date": first_date,
         "last_date": last_date,
@@ -374,6 +399,9 @@ def statements_search_view_cached(request):
         "l_stmts_no_speaker": l_stmts_no_speaker,
         "l_party_no_statements": l_party_no_statements,
         "l_l_part_of_speech_freqs": l_l_part_of_speech_freqs,
+        "l_counts_words": l_counts_words,
+        # "l_count_date": l_count_date,
+        "l_count_year": l_count_year,
     }
     print("RENDER %s" % (datetime.datetime.now() - time))
     res = render(request, "basics/statements_search.html", ctx)
@@ -462,9 +490,10 @@ def party_view(request, id):
     filters = {
         "speaker__party": party,
     }
+    # print(type(filters["speaker__party"]))
 
     if search_fields:
-        stmts, no_stmts, no_stmts_filtered = filter_statements_cached(search_fields, filters)
+        stmts, no_stmts, no_stmts_filtered, l_counts_words = filter_statements_cached(search_fields, filters)
 
         l_l_part_of_speech_freqs = get_l_l_part_of_speech_freqs(stmts, request)
 
@@ -489,6 +518,7 @@ def party_view(request, id):
         l_speakers = []
         no_stmt_blocks = 0
         l_l_part_of_speech_freqs = []
+        l_counts_words = []
 
     form = """<form name="word-search-form" method="GET">"""
     form += """<input type="submit" value="%s"/>""" % _("Suchen")
@@ -511,6 +541,7 @@ def party_view(request, id):
         "l_speakers_block_nos_stmts": l_speakers_block_nos_stmts,
         "l_speakers": list(set(l_speakers)),
         "no_stmt_blocks": no_stmt_blocks,
+        "l_counts_words": l_counts_words,
     }
 
     print('sending to templates')
@@ -519,3 +550,13 @@ def party_view(request, id):
             return render(request, "basics/function_filtered_word_not_found.html", ctx)
         return render(request, "basics/party_filtered.html", ctx)
     return render(request, "basics/party.html", ctx)
+
+
+def zukunft():
+
+    s = StatementSet()
+    s.filter(speaker="", party="", words={})
+    s.get_statement_list()
+    s.get_speaker_list()
+    s.get_frequency()
+

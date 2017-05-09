@@ -12,6 +12,29 @@
 
 <div class="collapse_button"></div>
 
+<table class="inline">
+    <tr>
+        <th>Suchtrefferwort</th>
+        <th>Anzahl</th>
+        <th>%</th>
+    </tr>
+
+    {% for count, rel_count, word in l_counts_words %}
+        {% if forloop.counter0 < 3 %}
+        <tr>
+            <td>{{ word }}</td>
+            <td class="number">{{ count }}</td>
+            <td class="number">{{ rel_count }}</td>
+        </tr>
+        {% else %}
+        <tr class="hideable">
+            <td>{{ word }}</td>
+            <td class="number">{{ count }}</td>
+            <td class="number">{{ rel_count }}</td>
+        </tr>
+        {% endif %}
+    {% endfor %}
+
 {% for part_of_speech, l_word_freq in l_l_part_of_speech_freqs %}
 
     <table class="inline">

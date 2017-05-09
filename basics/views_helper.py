@@ -81,7 +81,7 @@ def get_l_l_part_of_speech_freqs(stmts, request):
             new_search_field_number = 0
         new_search_field_number = str(new_search_field_number)
 
-        for index, (rel_freq, abs_freq, word) in enumerate(l_part_of_speech_freq):
+        for index_2, (rel_freq, abs_freq, word) in enumerate(l_part_of_speech_freq):
             gen_word_pos_freq = d_gen_pos_freq[word]
 
             if counter > 99:
@@ -115,49 +115,87 @@ def color_search_words(stmts, all_search_terms):
     return stmts
 
 
+def get_match_words_counts(stmts, all_search_terms, no_stmts):
+    d_words_counts = {}
+
+    for stmt in stmts:
+        l_words = []
+        for words in [stmt.str_nouns, stmt.str_adjectives, stmt.str_verbs, stmt.str_other_words]:
+            l_words_temp = words.split('|')
+            for i in l_words_temp:
+                l_words.append(i)
+
+        for search_term in all_search_terms:
+            search_term_lower = search_term.lower()
+            for word in l_words:
+                if search_term in word or search_term_lower in word:
+
+                    if word in d_words_counts:
+                        d_words_counts[word] += 1
+                    else:
+                        d_words_counts[word] = 1
+
+    l_count_rel_count_word = sorted([(count, round(float(count)/no_stmts * 100, 2), word) for word, count in d_words_counts.iteritems() if len(word) < 30])[::-1]
+
+    return l_count_rel_count_word
+
+
 def filter_statements(search_fields, filters):
     if search_fields:
         stmts = RegularStatement.objects.filter(**filters)
         no_stmts = stmts.count()
         filters = {}
+        all_search_terms = []
         for term in search_fields:
             or_set = None
             commas = term.split(',')
             for w in commas:
+                all_search_terms.append(w)
                 filters["text__contains"] = w
                 qset = stmts.filter(**filters)
                 or_set = (or_set | qset) if or_set is not None else qset
             stmts = or_set
         stmts = stmts.order_by("document__date", "order_id")
         no_stmts_filtered = stmts.count()
+
+        l_counts_rel_counts_words = get_match_words_counts(stmts, all_search_terms, no_stmts_filtered)
+
+        print(l_counts_rel_counts_words)
     else:
         stmts = RegularStatement.objects.filter(**filters)
         no_stmts = stmts.count()
         no_stmts_filtered = ''
+        l_counts_rel_counts_words = []
 
-    return stmts, no_stmts, no_stmts_filtered
+    return stmts, no_stmts, no_stmts_filtered, l_counts_rel_counts_words
 
 
 def filter_statements_cached(search_fields, filters):
 
-    key = "filter_statements_%s" % [search_fields, filters]
+    cache_filters = {}
+    # print(filters, 2)
+    for key, value in filters.iteritems():
+        cache_filters[key] = unicode(value)
+    key = "filter_statements_%s" % [search_fields, cache_filters]
+    # print(key, 3)
+    # print(type(key), 3)
+
+    # print(type(key), 1)
     res = PickleCache.restore(key=key)
     if res is None:
-        stmts, no_stmts, no_stmts_filtered = filter_statements(search_fields, filters)
+        stmts, no_stmts, no_stmts_filtered, l_counts_rel_counts_words = filter_statements(search_fields, filters)
         obj = {
             "no_stmts": no_stmts,
             "no_stmts_filtered": no_stmts_filtered,
             "stmts": stmts,
+            "l_counts_rel_counts_words": l_counts_rel_counts_words
         }
         PickleCache.store(key, obj)
         print("CACHE STORED")
-        return stmts, no_stmts, no_stmts_filtered
+        return stmts, no_stmts, no_stmts_filtered, l_counts_rel_counts_words
     else:
         print("CACHE RESTORED")
-        #query =
-        #qset = RegularStatement.objects.all()
-        #qset.query = query
-        return res["stmts"], res["no_stmts"], res["no_stmts_filtered"]
+        return res["stmts"], res["no_stmts"], res["no_stmts_filtered"], res["l_counts_rel_counts_words"]
 
 
 def order_stmts_by_speaker_stmt_blocks(stmts, all_search_terms):
@@ -246,7 +284,11 @@ def count_speaker_party_from_statements(stmts, request):
     # print(l_stmts_no_speaker)
 
     print("%s COUNT sort party" % (datetime.datetime.now() - time))
-    l_party_no_statements = sorted([(no_stmts, party) for party, no_stmts in party_no_statements.iteritems()])[::-1]
+    d_party_counts = pos_freq_dic('party_stmt_count')
+
+    l_party_no_statements = sorted([(no_stmts, party, round(no_stmts / d_party_counts[party] * 100, 2)) for party, no_stmts in party_no_statements.iteritems() if party])[::-1]
+
+
     return l_stmts_no_speaker, l_party_no_statements, first_date, last_date
 
 
@@ -257,4 +299,32 @@ def count_speaker_party_from_statements_cached(cachekey, stmts, request):
     else:
         l_speaker, l_party, first_date, last_date = count_speaker_party_from_statements(stmts, request)
         PickleCache.store(cachekey, (l_speaker, l_party, first_date, last_date))
+
         return l_speaker, l_party, first_date, last_date
+
+
+def get_date_counts_from_stmts(stmts):
+
+    d_date_count = {}
+    d_year_count = {}
+    for stmt in stmts:
+        date = stmt.document.date
+        year = date.year
+        # print(date)
+        if year in d_year_count:
+            d_year_count[year] += 1
+        else:
+            d_year_count[year] = 1
+
+        if date in d_date_count:
+            d_date_count[date] += 1
+        else:
+            d_date_count[date] = 1
+
+    l_count_date = sorted([(date, count) for date, count in d_date_count.iteritems()])[::-1]
+
+    l_count_year = sorted([(count, year) for year, count in d_year_count.iteritems()])[::-1]
+    l_dates = [i[1] for i in l_count_year]
+    l_counts = [i[0] for i in l_count_year]
+
+    return l_count_year, l_dates, l_counts

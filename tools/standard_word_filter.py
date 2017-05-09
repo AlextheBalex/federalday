@@ -3,8 +3,7 @@ from __future__ import unicode_literals
 import sqlite3
 from find_persons import find_mentioned_persons_from_text
 from commons import clean_text_add_spaces, l_of_words
-
-
+from dictionary_functions import simple_dictionary, multi_option_dictionary, multi_option_dictionary_v_always_l
 
 
 def connect_sqlite():
@@ -41,6 +40,7 @@ def part_of_speech_dictionary(conn_sqlite, curs_sqlite, part_of_speech):
     return d
 
 def l_part_of_speech_dics():
+
     conn, curs = connect_sqlite()
     l_parts_of_speech = ['nouns', 'adjectives', 'verbs', 'partizip_i']
     l_ds = []
@@ -63,6 +63,7 @@ def words_standard_form(word, d_nouns, d_adjectives, d_verbs, d_partizip_i):
     if word_lower in d_partizip_i:
         return ''.join([d_partizip_i[word_lower], '(p)'])
     elif word_lower in d_adjectives:
+        # print word, d_adjectives[word_lower]
         return ''.join([d_adjectives[word_lower], '(a)'])
     elif word_lower in d_verbs:
         return ''.join([d_verbs[word_lower], '(v)'])
@@ -170,6 +171,11 @@ set_no_first_first_names = {'Bundeskanzlerin', 'Kanzlerin', u'Präsidentin', 'Mi
                             u'Ministerpräsident', 'Nur', 'Premierminister', 'Premierministerin', 'Herr', 'Frau',
                             'Vizepräsident', 'Vizepräsidentin'}
 
-#text = "Linksextremismus kann kleines IT-Sicherheit Frankreich Deutschland Stefan Müller Hunde größer laufendes fahrendes fuhr Angela Merkel"
+#text = "Zweitens ist das kein deutsches Phänomen. In vielen Ländern, gerade in Europa, stellen wir fest – übrigens in den östlichen genauso wie in den westlichen Ländern –, dass Sportveranstaltungen offensichtlich missbraucht werden, um extremistische, antisemitische, gewaltbereite Parolen zu verbreiten und Gewalttaten im Umfeld von Sportveranstaltungen durchzuführen."
 
 #print create_part_of_speech_strings_with_persons_and_wiki_titles(text, d_nouns, d_verbs, d_adjectives, d_partizip_i, d_first_names, d_last_names, set_no_first_first_names, d_wiki_titles)
+
+#print words_standard_form('extremistisch', d_nouns, d_adjectives, d_verbs, d_partizip_i)
+
+#conn, curs = connect_sqlite()
+#part_of_speech_dictionary(conn, curs, 'adjectives')

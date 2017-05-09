@@ -87,6 +87,14 @@ table.inline {
     display: inline-table;
 }
 
+.no-table-deco {
+    background: none;
+    border: none;
+}
+
+.align-top {
+    vertical-align: top;
+}
 
 th, td {
     text-align: left;

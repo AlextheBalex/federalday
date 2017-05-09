@@ -83,6 +83,10 @@ def create_file_of_speaker_function_party_stmts_counts():
 
 # create_file_of_speaker_function_party_stmts_counts()
 
+# def add_favorite_words_to_speakers():
+
+
+
 
 
 
