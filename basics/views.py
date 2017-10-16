@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import datetime
 
+from django.http import HttpResponse
 from django.shortcuts import render, Http404
 from django.utils.translation import ugettext_lazy as _
 
@@ -14,11 +15,18 @@ from views_helper import (get_l_l_part_of_speech_freqs, color_search_words,
                           filter_statements, filter_statements_cached,
                           order_stmts_by_speaker_stmt_blocks, pos_freq_dic,
                           count_speaker_party_from_statements_cached,
-                          get_date_counts_from_stmts)
+                          get_date_counts_from_stmts, get_l_speaker_distances)
+from dal import autocomplete
 
 
-#def default_redirect(request):
-#    return HttpResponseRedirect(reverse("basics:document_index"))
+class SearchAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = PickleCache.objects.all()
+
+        if self.q:
+            qs = qs.filter(name__istartswith=self.q)
+        return qs
+
 
 def doc_index_view(request):
     ctx = {
@@ -29,9 +37,15 @@ def doc_index_view(request):
     return render(request, "basics/document_index.html", ctx)
 
 
+def user_handling_view(request):
+
+    return render(request, "basics/user_handling.html")
+
+
 def speaker_index_view(request):
 
     speakers = Speaker.objects.all().order_by("name")
+    print 'got speakers'
     l_parl_secretaries = []
     l_federal_ministers = []
     l_parlamentarians = []
@@ -55,7 +69,7 @@ def speaker_index_view(request):
         "l_parlamentarians": l_parlamentarians,
         "l_else": l_else,
     }
-
+    print('rendering')
     return render(request, "basics/speaker_index.html", ctx)
 
 
@@ -116,13 +130,21 @@ def speaker_view(request, id):
         else:
             break
 
+    l_no_shared_words_speaker, l_normalized_shares_parties = get_l_speaker_distances(speaker)
+    print(l_no_shared_words_speaker)
+
     filters = {
         "speaker": speaker,
     }
 
-    stmts, no_stmts, no_stmts_filtered, l_counts_words = filter_statements(search_fields, filters)
+    all_search_terms = []
 
-    l_l_part_of_speech_freqs = get_l_l_part_of_speech_freqs(stmts, request)
+    stmts, no_stmts, no_stmts_filtered, l_counts_words, l_l_part_of_speech_freqs, l_year_str_l_freqs_words, l_count_date_url, l_dates, l_counts, l_counts_sorted_by_year = filter_statements_cached(
+        search_fields, filters, request, all_search_terms)
+
+    #stmts, no_stmts, no_stmts_filtered, l_counts_words = filter_statements(search_fields, filters)
+
+    #l_l_part_of_speech_freqs, l_year_str_l_freqs_words = get_l_l_part_of_speech_freqs(stmts, request)
 
     all_search_terms = []
     for field in search_fields:
@@ -168,6 +190,7 @@ def speaker_view(request, id):
     else:
         number_of_statements = 0
         first_date = "never"
+        l_year_str_l_freqs_words = []
 
     l_leg_period_active_dates = sorted([[k, v] for k, v in d_leg_period_active_dates.iteritems()])
     l_leg_period_no_stmts = sorted([(k, v, d_leg_period_active_dates[k]) for k, v in d_leg_period_no_stmts.iteritems()])
@@ -195,6 +218,8 @@ def speaker_view(request, id):
         "l_active_dates": l_active_dates,
         "l_l_part_of_speech_freqs": l_l_part_of_speech_freqs,
         "l_counts_words": l_counts_words,
+        "l_no_shared_words_speaker": l_no_shared_words_speaker,
+        "l_normalized_shares_parties": l_normalized_shares_parties,
     }
     if search_fields:
         if not stmts:
@@ -262,7 +287,7 @@ def statements_search_view(request):
         url_search_words_add = request.get_full_path().split('/')[-1]
 
         d_speaker_counts = pos_freq_dic('speaker_stmt_count')
-        #print d_speaker_counts
+        # print d_speaker_counts
 
         l_stmts_no_speaker = sorted(
             [
@@ -316,6 +341,7 @@ def statements_search_view_cached(request):
 
     num_search_fields = 1
     search_fields = []
+    year = request.GET.get("year", None)
     for i in range(10):
         term = request.GET.get("word%s" % i, None)
         if term:
@@ -324,37 +350,58 @@ def statements_search_view_cached(request):
         else:
             break
 
+    query_str = request.GET.urlencode()
+
     time = datetime.datetime.now()
     print("FILTER %s" % (datetime.datetime.now()-time))
 
     plot = ""
-    filters = {}
+    if year:
+        filters = {'document__date__year': int(year)}
+        year_analysis = True
+    else:
+        filters = {}
+        year_analysis = False
+
     all_search_terms = []
     l_l_part_of_speech_freqs = []
-    if search_fields:
-        stmts, no_stmts, no_stmts_filtered, l_counts_words = filter_statements_cached(search_fields, filters)
 
+    for field in search_fields:
+        for term in field.split(','):
+            all_search_terms.append(term)
+
+    if search_fields:
+        stmts, no_stmts, no_stmts_filtered, l_counts_words, l_l_part_of_speech_freqs, l_year_str_l_freqs_words, l_count_date_url, l_dates, l_counts, l_counts_sorted_by_year = filter_statements_cached(search_fields, filters, request, all_search_terms)
+        # print(stmts[0].document.date.year, 9)
         print("FREQ %s" % (datetime.datetime.now() - time))
-        l_l_part_of_speech_freqs = get_l_l_part_of_speech_freqs(stmts, request)
+        #l_l_part_of_speech_freqs, l_year_str_l_freqs_words = get_l_l_part_of_speech_freqs(stmts, request)
 
         print("COLOR %s" % (datetime.datetime.now() - time))
-        for field in search_fields:
-            for term in field.split(','):
-                all_search_terms.append(term)
-        stmts = color_search_words(stmts, all_search_terms)
+
 
         print("COUNT DATES, YEARS %s" % (datetime.datetime.now() - time))
 
-        l_count_year, l_dates, l_counts = get_date_counts_from_stmts(stmts)
+        #l_count_date_url, l_dates, l_counts, l_counts_sorted_by_year = get_date_counts_from_stmts(stmts, request)
 
-        plot = bokehplot.get_plot_markup_xy("Titel", "X", "Y", l_dates, l_counts)  # , x_axis_type="datetime")
-        print(plot)
+        l_year_counts_str_l_freqs = []
+        print 8, l_counts_sorted_by_year
+        print 8, l_year_str_l_freqs_words
+
+        if l_counts_sorted_by_year:
+            for index, (year, str_l_freqs) in enumerate(l_year_str_l_freqs_words):
+                l_year_counts_str_l_freqs.append((year, l_counts_sorted_by_year[index], str_l_freqs))
+
+        if year_analysis:
+            plot = bokehplot.get_plot_markup_xy("Titel", "X", "Y", l_dates, l_counts, x_axis_type="datetime")
+        else:
+            plot = bokehplot.get_plot_markup_xy("Titel", "X", "Y", l_dates, l_counts)
+
+        # print(plot)
     else:
         stmts = None
         no_stmts_filtered = 0
         l_counts_words = []
-        l_count_date = []
-        l_count_year = []
+        l_count_date_url, l_dates, l_counts = [], [], []
 
     if stmts:
         cachekey = "count_statements_%s" % [search_fields, filters]
@@ -366,32 +413,37 @@ def statements_search_view_cached(request):
         first_date = "never"
         last_date = 'never'
         l_party_no_statements = []
-        l_count_date = []
-
-    current_page = request.GET.get("page", 0)
-    stmts_per_page = request.GET.get("stmts_per_page", 25)
-
-    try:
-        num_stmts = stmts.count()
-    except AttributeError:
-        num_stmts = 0
-
-    first_stmt = max(0, min(num_stmts-stmts_per_page, current_page * stmts_per_page ))
-    # last_stmt = min(num_stmts, first_stmt + stmts_per_page)
+        l_year_counts_str_l_freqs = []
 
     form = """<form name="word-search-form" method="GET">"""
     form += """<input type="submit" value="%s"/>""" % _("Suchen")
     for i in range(num_search_fields):
         val = request.GET.get("word%s" % i, "")
-        form += """ <input type="text" name="word%s" placeholder="%s" value="%s"/>""" % (
+        form += """ <input type="search" name="word%s" id="search_words" placeholder="%s" value="%s"/>""" % (
             i, _("search word"), val)
     form += "</form>"
+
+    '''from dal import autocomplete
+    from django import forms
+
+    class SearchForm(forms.ModelForm):
+        class Meta:
+            model = PickleCache
+            fields = ('__all__')
+            widgets = {
+                'identifier': autocomplete.ModelSelect2(url='basics/search_autocomplete')
+            }'''
+
+    #if stmts:
+    #    stmts = stmts[:300]
+
 
     ctx = {
         "title": "%s" % "Statements Suche",
         "plot": plot,
         "form": form,
-        "statements": stmts,#[first_stmt:last_stmt],
+        "query_str": query_str,
+        "statements": stmts, # [first_stmt:last_stmt],
         "number_of_statements": no_stmts_filtered,
         "first_date": first_date,
         "last_date": last_date,
@@ -400,13 +452,64 @@ def statements_search_view_cached(request):
         "l_party_no_statements": l_party_no_statements,
         "l_l_part_of_speech_freqs": l_l_part_of_speech_freqs,
         "l_counts_words": l_counts_words,
-        # "l_count_date": l_count_date,
-        "l_count_year": l_count_year,
+        "l_count_date_url": l_count_date_url,
+        "l_year_counts_str_l_freqs": l_year_counts_str_l_freqs,
+        # "l_count_year_url": l_count_year_url,
     }
     print("RENDER %s" % (datetime.datetime.now() - time))
     res = render(request, "basics/statements_search.html", ctx)
     print("DONE %s" % (datetime.datetime.now()-time))
     return res
+
+
+def statements_only_search_view_cached(request):
+
+    num_search_fields = 1
+    search_fields = []
+    year = request.GET.get("year", None)
+    for i in range(10):
+        term = request.GET.get("word%s" % i, None)
+        if term:
+            num_search_fields = i+2
+            search_fields.append(term)
+        else:
+            break
+
+    if year:
+        filters = {'document__date__year': int(year)}
+        year_analysis = True
+    else:
+        filters = {}
+        year_analysis = False
+
+    all_search_terms = []
+    l_l_part_of_speech_freqs = []
+
+    for field in search_fields:
+        for term in field.split(','):
+            all_search_terms.append(term)
+
+    if search_fields:
+        stmts, no_stmts, no_stmts_filtered, l_counts_words, l_l_part_of_speech_freqs, l_year_str_l_freqs_words, l_count_date_url, l_dates, l_counts, l_counts_sorted_by_year = filter_statements_cached(search_fields, filters, request, all_search_terms)
+
+    else:
+        stmts = None
+        no_stmts_filtered = 0
+
+    per_page = 10
+    statements_from = int(request.GET.get("page", 0)) * per_page
+    statements_to = statements_from + per_page
+    if stmts:
+        stmts = stmts[statements_from:statements_to]
+
+    ctx = {
+        "statements_from": statements_from,
+        "statements_to": statements_to,
+        "statements": stmts, # [first_stmt:last_stmt],
+    }
+    res = render(request, "basics/statements_only.html", ctx)
+    return res
+
 
 def function_view(request, id):
     try:
@@ -429,14 +532,15 @@ def function_view(request, id):
         "speaker__function": function,
     }
 
-    stmts, no_stmts, no_stmts_filtered = filter_statements(search_fields, filters)
-
-    l_l_part_of_speech_freqs = get_l_l_part_of_speech_freqs(request, stmts)
-
     all_search_terms = []
     for field in search_fields:
         for term in field.split(','):
             all_search_terms.append(term)
+
+    stmts, no_stmts, no_stmts_filtered, l_counts_rel_counts_words, \
+    l_l_part_of_speech_freqs, l_year_str_l_freqs_words, l_count_date_url, l_dates, l_counts, l_counts_sorted_by_year = filter_statements_cached(search_fields, filters, request, all_search_terms)
+
+    #l_l_part_of_speech_freqs = get_l_l_part_of_speech_freqs(stmts, request)
 
     last_date = ''
     number_of_active_dates = 0
@@ -492,21 +596,21 @@ def party_view(request, id):
     }
     # print(type(filters["speaker__party"]))
 
-    if search_fields:
-        stmts, no_stmts, no_stmts_filtered, l_counts_words = filter_statements_cached(search_fields, filters)
+    stmts, no_stmts, no_stmts_filtered, l_counts_rel_counts_words, \
+    l_l_part_of_speech_freqs, l_year_str_l_freqs_words, l_count_date_url, l_dates, l_counts, l_counts_sorted_by_year = filter_statements_cached(search_fields, filters, request, [])
 
-        l_l_part_of_speech_freqs = get_l_l_part_of_speech_freqs(stmts, request)
+    l_l_part_of_speech_freqs = get_l_l_part_of_speech_freqs(stmts, request)
 
-        all_search_terms = []
-        for field in search_fields:
-            for term in field.split(','):
-                all_search_terms.append(term)
+    all_search_terms = []
+    for field in search_fields:
+        for term in field.split(','):
+            all_search_terms.append(term)
 
-        last_date = ''
-        number_of_active_dates = 0
-
-        l_speakers_block_nos_stmts, l_speakers, no_stmt_blocks = order_stmts_by_speaker_stmt_blocks(stmts, all_search_terms)
-
+    last_date = ''
+    number_of_active_dates = 0
+    if search_fields or stmts.count() < 100:
+        l_speakers_block_nos_stmts, l_speakers, no_stmt_blocks = order_stmts_by_speaker_stmt_blocks(stmts,
+                                                                                                    all_search_terms)
         print('ordered by speaker')
 
     else:
@@ -541,7 +645,7 @@ def party_view(request, id):
         "l_speakers_block_nos_stmts": l_speakers_block_nos_stmts,
         "l_speakers": list(set(l_speakers)),
         "no_stmt_blocks": no_stmt_blocks,
-        "l_counts_words": l_counts_words,
+        "l_counts_words": l_counts_rel_counts_words,
     }
 
     print('sending to templates')
@@ -552,11 +656,20 @@ def party_view(request, id):
     return render(request, "basics/party.html", ctx)
 
 
-def zukunft():
+def year_stmt_search(request):
+
+    h = 1
+
+
+def lazy_content(request):
+
+    return HttpResponse("Voll nachgeladen, Alter!")
+
+'''def zukunft():
 
     s = StatementSet()
     s.filter(speaker="", party="", words={})
     s.get_statement_list()
     s.get_speaker_list()
-    s.get_frequency()
+    s.get_frequency()'''
 

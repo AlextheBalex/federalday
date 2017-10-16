@@ -1,0 +1,17 @@
+{% regroup statements by document as stmts_list %}
+
+<div id="statements-block">
+
+    <p>from {{ statements_from }} to {{ statements_to }}</p>
+
+    <ul class="a">
+    {% for stmts in stmts_list %}
+        <h3>{{ stmts.grouper.date }} - <a href="{{ stmts.grouper.url }}">Dokument-Id:{{stmts.grouper.document_id}}</a></h3>
+        <ul class="b">
+            {% for stmt in stmts.list %}
+              <li><strong>{{stmt.speaker}} S.{{ stmt.page }}:</strong> {{ stmt.text | safe }}</li><br>
+            {% endfor %}
+        </ul>
+        {% endfor %}
+    </ul>
+</div>

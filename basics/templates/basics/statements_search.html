@@ -1,8 +1,33 @@
 {% extends "basics/base.html" %}
-
+{% load static %}
 {% block content %}
 
 {{ form|safe }}
+
+
+{% block javascript %}
+  <script>
+    $("#search_words").change(function () {
+      console.log( $(this).val() );
+    });
+  </script>
+{% endblock %}
+
+<input type="button" value="fetch statements" onclick="loadLazyContainer('{{ query_str }}');" />
+<input type="number" value="0" id="statements-page">
+
+<div id="lazy-container">
+</div>
+
+<table>
+    {% for year, count, significant_words in l_year_counts_str_l_freqs %}
+    <tr>
+        <td>{{ year }}</td>
+        <td>{{ count }}</td>
+        <td>{{ significant_words | safe }}</td>
+    </tr>
+    {% endfor %}
+</table>
 
 <table class="no-table-deco">
     <tr class="no-table-deco">
@@ -14,15 +39,15 @@
                 <th>Anzahl</th>
             </tr>
 
-            {% for count, year in l_count_year %}
+            {% for count, year, url in l_count_date_url %}
                 {% if forloop.counter0 < 3 %}
                 <tr>
-                    <td>{{ year }}</td>
+                    <td><a href="{{ url }}">{{ year }}</a></td>
                     <td class="number">{{ count }}</td>
                 </tr>
                 {% else %}
                 <tr class="hideable">
-                    <td>{{ year }}</td>
+                    <td><a href="{{ url }}">{{ year }}</a></td>
                     <td class="number">{{ count }}</td>
                 </tr>
                 {% endif %}
@@ -116,7 +141,7 @@
         </tr>
         {% endif %}
     {% endfor %}
-
+</table>
 
 {% for part_of_speech, l_word_freq in l_l_part_of_speech_freqs %}
 
@@ -147,15 +172,17 @@
 
 {% regroup statements by document as stmts_list %}
 
-<ul class="a">
-{% for stmts in stmts_list %}
-    <h3>{{ stmts.grouper.date }} - <a href="{{ stmts.grouper.url }}">Dokument-Id:{{stmts.grouper.document_id}}</a></h3>
-    <ul class="b">
-        {% for stmt in stmts.list %}
-          <li><strong>{{stmt.speaker}} S.{{ stmt.page }}:</strong> {{ stmt.text | safe }}</li><br>
+<div id="statements-block">
+    <ul class="a">
+    {% for stmts in stmts_list %}
+        <h3>{{ stmts.grouper.date }} - <a href="{{ stmts.grouper.url }}">Dokument-Id:{{stmts.grouper.document_id}}</a></h3>
+        <ul class="b">
+            {% for stmt in stmts.list %}
+              <li><strong>{{stmt.speaker}} S.{{ stmt.page }}:</strong> {{ stmt.text | safe }}</li><br>
+            {% endfor %}
+        </ul>
         {% endfor %}
     </ul>
-    {% endfor %}
-</ul>
+</div>
 
 {% endblock %}

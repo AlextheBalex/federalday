@@ -7,19 +7,27 @@
     <meta charset="utf-8">
     <script type="text/javascript" src="{% static 'basics/bokeh-0.12.5.min.js' %}">
 </script>
-    <script type="text/javascript" src="{% static 'basics/jquery-3.2.0.slim.min.js' %}">
+    <script type="text/javascript" src="{% static 'basics/jquery-3.2.1.min.js' %}">
 </script>
     <script type="text/javascript" src="{% static 'basics/search_word_highlighting.js' %}">
 </script>
+    <script type="text/javascript" src="{% static 'basics/lazy-container.js' %}"></script>
     <title>{{ title }}</title>
     <!-- <meta name="description" content="Webpage for xxxx"> -->
 
   </head>
+
+
   <body>
   <div class="navbar">
     <a href="{% url 'basics:document_index' %}">documents</a>
     | <a href="{% url 'basics:speaker_index' %}">speakers</a> | <a href="{% url 'basics:party_index' %}">parties</a> | <a href="{% url 'basics:function_index' %}">functions</a> | <a href="{% url 'basics:statements_search' %}">statements_search</a>
   </div>
+
+
+    <script>
+      var url_lazy_content = "{% url 'basics:statements_only' %}";
+    </script>
 
     <div class="header">
     {% block title %}<h2>{{ title }}</h2>{% endblock %}

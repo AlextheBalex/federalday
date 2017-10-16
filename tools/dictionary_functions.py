@@ -18,6 +18,23 @@ def simple_dictionary(file_name):
     return d
 
 
+def word_pair_dictionary():
+    file_path = '/home/foritisiemperor/Music/transform_pdf/federalday/tools/data/word_pairs.txt'
+    d = {}
+    with open(file_path, 'r') as the_file:
+        f = the_file.read().decode('utf-8')
+        l_entries = f.split('\n')
+        for entry in l_entries:
+            try:
+                standard_pair, str_set_forms = entry.split(' :: ')
+                l_forms = str_set_forms.split(', ')
+                for form in l_forms:
+                    d[form] = standard_pair
+            except ValueError:
+                continue
+    return d
+
+
 def multi_option_dictionary(file_name):
     file_path = '/home/foritisiemperor/Music/transform_pdf/federalday/tools/data/%s' % file_name
     d = {}

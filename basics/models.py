@@ -24,6 +24,7 @@ class Party(models.Model):
 
     name = models.CharField(max_length=200, verbose_name=_("party name"), blank=True, default="")
     abbrev = models.CharField(max_length=200, verbose_name=_("abbreviation"))
+    significant_words = models.TextField(verbose_name=_("Store of significant words"), default=None, blank=True)
 
     def __unicode__(self):
         return "%s" % self.abbrev
@@ -56,6 +57,13 @@ class StmtBlock(models.Model):
     document = models.ForeignKey("basics.Document", verbose_name=_("who said it"), default=None, null=True)
 
 
+class WordMap(models.Model):
+
+    word = models.CharField(max_length=200, verbose_name=_("Wort"))
+    str_stmt_pks = models.TextField(verbose_name=_("Pks of texts that contain word"))
+    no_stmts = models.IntegerField(verbose_name=_("Anzahl an Statements in dem das Wort vorkommt"), default=None, null=True)
+
+
 class RegularStatement(models.Model):
 
     text = models.TextField(verbose_name=_("text"))
@@ -66,6 +74,7 @@ class RegularStatement(models.Model):
     str_other_words = models.TextField(verbose_name=_("other words"), default=None)
     str_persons = models.TextField(verbose_name=_("persons"), default=None)
     str_titles = models.TextField(verbose_name=_("wikipedia titles"), default=None)
+    str_word_pairs = models.TextField(verbose_name=_("Standartisierte Wort Paara"), default=None, null=True)
     speaker = models.ForeignKey("basics.Speaker", verbose_name=_("who said it"))
     document = models.ForeignKey("basics.Document", verbose_name=_("source document"), default=None)
     order_id = models.IntegerField(verbose_name=_("order within document"), default=0)
@@ -73,6 +82,7 @@ class RegularStatement(models.Model):
     no_unique_words = models.IntegerField(verbose_name=_('number of unique standardized words of the statement'), default=0)
     page = models.IntegerField(verbose_name=_("page where statement begins"), default=0)
     cleaned_text = models.TextField(verbose_name=_("only letters"), default=None, null=True)
+    relevant = models.NullBooleanField()
 
     def __unicode__(self):
         return "%s-%s %s" % (self.document, self.order_id, self.speaker)
@@ -83,11 +93,14 @@ class RegularStatement(models.Model):
     def str_nouns_short_decorator(self):
         return self.str_nouns[:30]
 
+
 class Speaker(models.Model):
 
     name = models.CharField(max_length=200, verbose_name=_("speaker name"))
     party = models.ForeignKey("basics.Party", on_delete=models.CASCADE)
     function = models.ForeignKey("basics.Function", on_delete=models.CASCADE)
+    significant_words = models.TextField(verbose_name=_("Store of significant words"), default=None, blank=True)
+    data_suggested_party = models.ForeignKey("basics.Party", related_name='data_suggested_party', on_delete=models.CASCADE, default=None, null=True)
 
     def __unicode__(self):
         if self.party.abbrev:

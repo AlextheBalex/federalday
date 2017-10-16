@@ -69,6 +69,7 @@ def get_last_pdf_legnum_docnum():
 
 def download_latest_plenarprotokolle():
     latest_leg_period, latest_docnum = get_last_pdf_legnum_docnum()
+    new_documents = False
     for period in xrange(latest_leg_period, 20):
         
         start = latest_docnum + 1
@@ -78,5 +79,7 @@ def download_latest_plenarprotokolle():
             if download(get_name(period, docnum)) == False:
                 print "failed"
                 break
-
+            else:
+                new_documents = True
+    return new_documents
 # download_latest_plenarprotokolle()

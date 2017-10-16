@@ -41,7 +41,6 @@
 <div class="collapse_button"></div>
 
 
-
 {% for part_of_speech, l_word_freq in l_l_part_of_speech_freqs %}
 
     <table class="inline">
@@ -49,7 +48,7 @@
             <th colspan="3">{{ part_of_speech }} Häufigkeiten</th>
         </tr>
 
-        {% for rel_freq, abs_freq, word in l_word_freq %}
+        {% for rel_freq, abs_freq, word, further_search_link in l_word_freq %}
             {% if forloop.counter0 < 3 %}
             <tr>
                 <td>{{ word }}</td>
@@ -58,7 +57,7 @@
             </tr>
             {% else %}
             <tr class="hideable">
-                <td>{{ word }}</td>
+                <td>{{ word|safe }}</td>
                 <td class="number">{{ rel_freq }}</td>
                 <td class="number">{{ abs_freq }}</td>
             </tr>
@@ -76,7 +75,7 @@
             {% for stmt_block in l_stmt_blocks %}
                 <h3 class="stmt_block_title"><a href="{{ stmt_block.0.document.url }}">{{ stmt_block.0.document }}</a></h3>
                 {% for stmt in stmt_block %}
-                    <li>S.{{ stmt.page }}: {{ stmt.text }}</li><br>
+                    <li>S.{{ stmt.page }}: {{ stmt.text | safe}}</li><br>
                 {% endfor %}
             {% endfor %}
 

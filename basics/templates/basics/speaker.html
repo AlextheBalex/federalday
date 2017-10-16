@@ -36,6 +36,42 @@
 
 <div class="collapse_button"></div>
 
+
+<table class="inline">
+    <tr>
+        <th>Sprecher</th>
+        <th>Anzahl gemeinsamer Worte</th>
+    </tr>
+
+    {% for no_shared_words, speaker in l_no_shared_words_speaker %}
+        {% if forloop.counter0 < 3 %}
+        <tr>
+            <td>{{ speaker }}</td>
+            <td class="number">{{ no_shared_words }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td>{{ speaker }}</td>
+            <td class="number">{{ no_shared_words }}</td>
+        </tr>
+        {% endif %}
+    {% endfor %}
+</table>
+
+<table class="inline">
+    <tr>
+        <th>Partei</th>
+        <th>%</th>
+    </tr>
+    {% for normalized_party_share_index, party in l_normalized_shares_parties %}
+        <tr>
+            <td>{{ party }}</td>
+            <td class="number">{{ normalized_party_share_index }}</td>
+        </tr>
+    {% endfor %}
+</table>
+
+
 {% for part_of_speech, l_word_freq in l_l_part_of_speech_freqs %}
 
     <table class="inline">
